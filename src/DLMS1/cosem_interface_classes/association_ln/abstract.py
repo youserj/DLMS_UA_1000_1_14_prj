@@ -1,0 +1,6 @@
+from typing import Protocol
+
+
+class AccessModeProto(Protocol):
+    def is_writable(self) -> bool: ...
+    def is_readable(self) -> bool: ...
