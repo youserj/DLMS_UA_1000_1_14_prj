@@ -3,7 +3,8 @@ from itertools import count
 import time
 import unittest
 from DLMS_SPODES.cosem_interface_classes import Parameter
-from src.DLMS1.types import cdt, cst, ut
+from src.DLMS1.types import cdt, ut
+from src.DLMS1.types.implementations import octet_string
 from src.DLMS1.cosem_interface_classes import collection, overview, ln_pattern
 from src.DLMS1.obis import media_id
 from src.DLMS1.exceptions import NeedUpdate, NoObject
@@ -60,14 +61,14 @@ class TestType(unittest.TestCase):
         col.add(
             class_id=overview.ClassID.PROFILE_GENERIC,
             version=overview.VERSION_1,
-            logical_name=cst.LogicalName("01 00 5e 07 04 ff")
+            logical_name=octet_string.LN("01 00 5e 07 04 ff")
         )
         reg.set_attr(2, cdt.DoubleLongUnsigned(1234567890).encoding)
         reg.set_attr(3, (-8, 33))
         activity_calendar_obj = col.add(
             class_id=overview.ClassID.ACTIVITY_CALENDAR,
             version=overview.VERSION_0,
-            logical_name=cst.LogicalName.from_obis("0.0.13.0.0.255")
+            logical_name=octet_string.LN.from_obis("0.0.13.0.0.255")
         )
         activity_calendar_obj.parse_attr(
             9,
@@ -78,13 +79,13 @@ class TestType(unittest.TestCase):
         script_obj = col.add(
             class_id=overview.ClassID.SCRIPT_TABLE,
             version=overview.VERSION_0,
-            logical_name=cst.LogicalName("00 00 0a 00 64 ff")
+            logical_name=octet_string.LN("00 00 0a 00 64 ff")
         )
         script_obj.parse_attr(2, [['1', [['2', '3', "01 00 01 07 00 FF", '2', "0:"]]]])
         alarm1_obj = col.add(
             class_id=overview.ClassID.DATA,
             version=overview.VERSION_0,
-            logical_name=cst.LogicalName("00 00 61 62 00 FF")
+            logical_name=octet_string.LN("00 00 61 62 00 FF")
         )
         alarm1_obj.set_attr(2, 11)
         return col
@@ -114,7 +115,7 @@ class TestType(unittest.TestCase):
         self.assertEqual(col.has_sap(sap), True)
 
     def test_get_type_from_class(self):
-        ln = cst.LogicalName.from_obis("0.0.1.0.0.255")
+        ln = octet_string.LN.from_obis("0.0.1.0.0.255")
         value = collection.get_interface_class(collection.common_interface_class_map, 7, 1)
         v1 = value(ln)
         print(value, v1)
@@ -136,7 +137,7 @@ class TestType(unittest.TestCase):
         cont.add(col2)
         ver_obj = col.add(class_id=ut.CosemClassId(1),
                           version=cdt.Unsigned(0),
-                          logical_name=cst.LogicalName.from_obis("0.0.96.1.6.255"))
+                          logical_name=octet_string.LN.from_obis("0.0.96.1.6.255"))
         ver_obj.set_attr(2, "33 2e 30")
 
     def test_ClassMap(self):
@@ -215,10 +216,10 @@ class TestType(unittest.TestCase):
         col.spec_map = col.get_spec()
         ass_obj = col.add(class_id=overview.ClassID.ASSOCIATION_LN,
                           version=overview.VERSION_1,
-                          logical_name=cst.LogicalName.from_obis("0.0.40.0.3.255"))
+                          logical_name=octet_string.LN.from_obis("0.0.40.0.3.255"))
         ver_obj = col.add(class_id=overview.ClassID.DATA,
                           version=overview.VERSION_0,
-                          logical_name=cst.LogicalName.from_obis("0.0.0.2.1.255"))
+                          logical_name=octet_string.LN.from_obis("0.0.0.2.1.255"))
         self.assertRaises(NeedUpdate,
                           ver_obj.set_attr,
                           2,
@@ -352,7 +353,7 @@ class TestType(unittest.TestCase):
         obj = col.add(
             class_id=overview.ClassID.DATA,
             version=overview.VERSION_0,
-            logical_name=cst.LogicalName.from_obis("0.128.25.6.0.255")
+            logical_name=octet_string.LN.from_obis("0.128.25.6.0.255")
         )
         print(obj)
 
@@ -385,10 +386,10 @@ class TestType(unittest.TestCase):
         self.assertEqual(collection.AttrDesc.OBJECT_LIST.contents, b'\x00\x0f\x00\x00(\x00\x00\xff\x02\x00', "check cached object_list")
 
     def test_get_relation_group(self):
-        ln = cst.LogicalName.from_obis("0.0.1.0.0.255")
+        ln = octet_string.LN.from_obis("0.0.1.0.0.255")
         self.assertEqual(collection.get_relation_group(ln), collection.media_id.CLOCK_OBJECTS, "check_group")
         b1 = collection.get_media_id(ln)
-        ln = cst.LogicalName.from_obis("0.0.94.1.1.255")
+        ln = octet_string.LN.from_obis("0.0.94.1.1.255")
         a = collection.get_relation_group(ln)
         b2 = collection.get_media_id(ln)
         print(a)
@@ -523,7 +524,7 @@ class TestType(unittest.TestCase):
         pat3 = ln_pattern.GENERAL_AND_SERVICE_ENTRY
         pattern2 = collection.LNPattern.parse("a.2.31.4.5.9")
         print(pattern)
-        print(cst.LogicalName.from_obis("1.2.31.4.5.9") in (pattern, pattern2))
+        print(octet_string.LN.from_obis("1.2.31.4.5.9") in (pattern, pattern2))
         col = collection.get_collection(
             manufacturer=b"KPZ",
             server_type=collection.ParameterValue(
@@ -637,7 +638,7 @@ class TestType(unittest.TestCase):
         vol_ev_obj = col.get_object("0.0.96.11.0.255")
         vol_ev_obj.set_attr(2, 33)
         print(col.get_report(vol_ev_obj, b'\x02', vol_ev_obj.value))
-        col.add(collection.ClassID.DATA, overview.VERSION_0, cst.LogicalName.from_obis("0.0.96.5.1.255"))
+        col.add(collection.ClassID.DATA, overview.VERSION_0, octet_string.LN.from_obis("0.0.96.5.1.255"))
         vol_ev_obj = col.get_object("0.0.96.5.1.255")
         vol_ev_obj.set_attr(2, 5)
         print(col.get_report(vol_ev_obj, b'\x02', vol_ev_obj.value))

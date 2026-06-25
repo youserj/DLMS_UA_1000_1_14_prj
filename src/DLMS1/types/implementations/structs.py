@@ -1,14 +1,14 @@
 """ COMMON Structs """
 from dataclasses import dataclass
 from COSEMpdu.data import DoubleLongUnsigned, Integer, Structure, LongUnsigned, Unsigned, VisibleString
-from ...types import cosem_service_types as cst
+from ...types.implementations import octet_string
 from . import long_unsigneds
 
 
 @dataclass
 class ActionItem(Structure):
     """action_item"""
-    script_logical_name: cst.LogicalName
+    script_logical_name: octet_string.LN
     script_selector: LongUnsigned
 
 
@@ -16,15 +16,15 @@ class ActionItem(Structure):
 class ValueDefinition(Structure):
     """value_definition"""
     class_id: long_unsigneds.ClassId
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
     attribute_index: Integer
 
 
 @dataclass
 class RestrictionByDate(Structure):
     """restriction_by_date"""
-    from_date: cst.OctetStringDate
-    to_date: cst.OctetStringDate
+    from_date: octet_string.Date
+    to_date: octet_string.Date
 
 
 @dataclass
@@ -38,7 +38,7 @@ class RestrictionByEntry(Structure):
 class CaptureObjectDefinition(Structure):
     """capture_object_definition"""
     class_id: long_unsigneds.ClassId
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
     attribute_index: Integer
     data_index: LongUnsigned
 
@@ -46,8 +46,8 @@ class CaptureObjectDefinition(Structure):
 @dataclass
 class WindowElement(Structure):
     """window_element"""
-    start_time: cst.OctetStringDateTime
-    end_time: cst.OctetStringDateTime
+    start_time: octet_string.DateTime
+    end_time: octet_string.DateTime
 
 
 @dataclass

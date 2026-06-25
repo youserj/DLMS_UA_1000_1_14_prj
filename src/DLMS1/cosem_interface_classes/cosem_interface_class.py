@@ -5,9 +5,10 @@ from dataclasses import dataclass
 from struct import Struct
 from functools import lru_cache
 from typing_extensions import deprecated
-from typing import TypeAlias, Self, Literal, Optional, Protocol, ClassVar, Any, overload
+from typing import Self, Literal, Optional, Protocol, ClassVar, Any, overload
 from ..types.type_alias import Attr, Obis, Index, Encoding, attr2i, attr2obis, AttrDesc, pack_attr, Meth
-from ..types import cdt, ut, cst
+from ..types import cdt, ut
+from ..types.implementations import octet_string
 from StructResult import result
 from StructResult.result import ValueOrError, Error
 from COSEMpdu.byte_buffer import ByteBuffer
@@ -17,7 +18,6 @@ from enum import IntEnum
 from .. import exceptions as exc
 from .overview import ClassID
 from ..settings import settings
-from .. import literals
 
 
 obis2attr_pat = Struct(">6sH")
@@ -103,7 +103,7 @@ def update_collection[T: ICElement](container: tuple[T, ...], *elements: T) -> t
     return tuple(new)
 
 
-_LN_ELEMENT: ICAElement = ICAElement(1, "logical_name", cst.LogicalName)
+_LN_ELEMENT: ICAElement = ICAElement(1, "logical_name", octet_string.LN)
 """" first element for each COSEM Interface Class"""
 
 

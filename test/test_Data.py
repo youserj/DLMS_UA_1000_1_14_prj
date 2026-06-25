@@ -1,5 +1,6 @@
 import unittest
 from src.DLMS1.types import cdt, cst, ut
+from src.DLMS1.types.implementations import octet_string
 from src.DLMS1.cosem_interface_classes import collection, overview
 from src.DLMS1.cosem_interface_classes import implementations as impl
 # from .init_collection import col
@@ -15,7 +16,7 @@ class TestType(unittest.TestCase):
 
     def test_eventsData(self):
         col = collection.Collection()
-        col.add(class_id=ut.CosemClassId(7), version=cdt.Unsigned(1), logical_name=cst.LogicalName.from_obis("0.0.99.98.4.255"))
+        col.add(class_id=ut.CosemClassId(7), version=cdt.Unsigned(1), logical_name=octet_string.LN.from_obis("0.0.99.98.4.255"))
         print(col)
 
     def test_ExternalEventData(self):
@@ -32,7 +33,7 @@ class TestType(unittest.TestCase):
         )
         col.spec_map = col.get_spec()
         print(col)
-        col.add(class_id=ut.CosemClassId(1), version=cdt.Unsigned(0), logical_name=cst.LogicalName.from_obis("0.0.96.11.4.255"))
+        col.add(class_id=ut.CosemClassId(1), version=cdt.Unsigned(0), logical_name=octet_string.LN.from_obis("0.0.96.11.4.255"))
         obj = col.get_object("0.0.96.11.4.255")
         obj.set_attr(2, cdt.LongUnsigned(2).encoding)
         # obj.set_attr(2, 2)

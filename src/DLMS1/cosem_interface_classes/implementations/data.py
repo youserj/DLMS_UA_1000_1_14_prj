@@ -1,8 +1,9 @@
 import re
+from dataclasses import dataclass
 from typing import Optional
 import logging
 from COSEMpdu import data
-from ...types import cdt, cst
+from ...types import cdt
 from ..cosem_interface_class import Classifier, ICAElement
 from ..data import Data, DataDynamic, DataStatic
 from ... import enums as enu
@@ -14,10 +15,6 @@ from ..ipv4_setup import MulticastIPAddress
 class LDN(DataStatic):
     """for ldn"""
     A_ELEMENTS = ICAElement(2, "value", octet_string.LDN, classifier=Classifier.STATIC),
-
-    @property
-    def get_manufacturer(self) -> bytes:
-        return self.value.contents[:3]
 
 
 class ActiveFirmwareId(Data):
@@ -31,13 +28,13 @@ class Unsigned(Data):
 
 class OctetStringDateTime(DataDynamic):
     """ with value type: OctetStringDateTime"""
-    A_ELEMENTS = ICAElement(2, "value", cst.OctetStringDateTime, classifier=Classifier.DYNAMIC),
+    A_ELEMENTS = ICAElement(2, "value", octet_string.DateTime, classifier=Classifier.DYNAMIC),
 
 
-class OpeningBodyUnsigned(cdt.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
+class OpeningBodyUnsigned(data.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
     def get_report(self) -> cdt.Report:
         """ СПОДЭСv.3 Е.12.5"""
-        match int(self) & 0b1:
+        match self.value & 0b1:
             case 0: return cdt.Report(
                 msg=get_message("$normal$"),
                 log=cdt.INFO_LOG)
@@ -51,7 +48,7 @@ class OpeningBody(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=OpeningBodyUnsigned),
 
 
-class OpeningCoverUnsigned(cdt.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
+class OpeningCoverUnsigned(data.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
     def get_report(self) -> cdt.Report:
         """ СПОДЭСv.3 Е.12.5"""
         match int(self) & 0b1:
@@ -68,17 +65,16 @@ class OpeningCover(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=OpeningCoverUnsigned),
 
 
-class ExposureToFieldUnsigned(cdt.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
+class ExposureToFieldUnsigned(data.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum
     def get_report(self) -> cdt.Report:
         if (value := (int(self) & 0b101)) == 0:
             return cdt.Report(get_message("$normal$"), log=cdt.INFO_LOG)
-        else:
-            ret = ""
-            if value & 0b001:
-                ret += get_message("$fixed_field$")
-            if value & 0b100:
-                ret += get_message("$exist_field$")
-            return cdt.Report(ret, log=cdt.Log(logging.WARN))
+        ret = ""
+        if value & 0b001:
+            ret += get_message("$fixed_field$")
+        if value & 0b100:
+            ret += get_message("$exist_field$")
+        return cdt.Report(ret, log=cdt.Log(logging.WARN))
 
 
 class ExposureToMagnet(DataDynamic):
@@ -91,7 +87,7 @@ class ExposureToHSField(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=ExposureToFieldUnsigned),
 
 
-class SealUnsigned(cdt.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum??
+class SealUnsigned(data.Unsigned, cdt.ReportMixin):  # todo: make as cdt.FlagEnum??
     def get_report(self) -> cdt.Report:
         def get_name(value: int):
             """ СПОДЭСv.3 Е.12.5"""
@@ -112,13 +108,14 @@ class SealStatus(DataDynamic):
 
 class TerminalsCoverOpeningState(DataDynamic):
     """ RU. 0.0.96.51.1.255. СТО_34.01-5.1-006-2019v3. E 12.2 """
-    A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=cdt.Unsigned),
+    A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=data.Unsigned),
 
 
-class BitMapData(cdt.Structure):
-    start_time: cst.OctetStringDateTime
-    stop_time: cst.OctetStringDateTime
-    bitmap_data: cdt.OctetString
+@dataclass
+class BitMapData(data.Structure):
+    start_time: octet_string.DateTime
+    stop_time: octet_string.DateTime
+    bitmap_data: data.OctetString
 
 
 class ITEBitMap(DataStatic):
@@ -126,14 +123,14 @@ class ITEBitMap(DataStatic):
     A_ELEMENTS = Data.getAElement(2).get_change(data_type=BitMapData),
 
 
-class ChannelNumberValue(cdt.Unsigned, cdt.ReportMixin):
+class ChannelNumberValue(data.Unsigned, cdt.ReportMixin):
     @property
     def channel(self) -> enu.ChannelNumber:
         return enu.ChannelNumber(int(self) & 0b0000_0111)
 
     @channel.setter
     def channel(self, value: enu.ChannelNumber) -> None:
-        self.set((int(self) & 0b1111_1000) | value)
+        self.value = (int(self) & 0b1111_1000) | value
 
     @property
     def interface(self) -> enu.Interface:
@@ -141,7 +138,7 @@ class ChannelNumberValue(cdt.Unsigned, cdt.ReportMixin):
 
     @interface.setter
     def interface(self, value: enu.Interface) -> None:
-        self.set((int(self) & 0b0001_1111) | (value << 3))
+        self.value = (int(self) & 0b0001_1111) | (value << 3)
 
     def get_report(self) -> cdt.Report:
         return cdt.Report(F"({int(self)}) Номер канала связи: {self.channel.name}, Тип интерфейса: {self.interface.name}")
@@ -158,7 +155,7 @@ class AnyDateTime(DataDynamic):
     # A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=choices.any_date_time),
 
 
-class SPODES3VoltageEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+class SPODES3VoltageEventValues(data.LongUnsigned):
     ...
 
 
@@ -167,7 +164,7 @@ class SPODES3VoltageEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=SPODES3VoltageEventValues),
 
 
-class SPODES3CurrentEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+class SPODES3CurrentEventValues(data.LongUnsigned):
     ...
 
 
@@ -176,7 +173,7 @@ class SPODES3CurrentEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=SPODES3CurrentEventValues),
 
 
-class SPODES3CommutationEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+class SPODES3CommutationEventValues(data.LongUnsigned):
     pass
 
 
@@ -185,7 +182,7 @@ class SPODES3CommutationEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=SPODES3CommutationEventValues),
 
 
-class SPODES3ProgrammingEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+class SPODES3ProgrammingEventValues(data.LongUnsigned):
     pass
 
 
@@ -194,7 +191,7 @@ class SPODES3ProgrammingEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=SPODES3ProgrammingEventValues),
 
 
-class SPODES3ExternalEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+class SPODES3ExternalEventValues(data.LongUnsigned):
     pass
 
 
@@ -203,7 +200,7 @@ class SPODES3ExternalEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=SPODES3ExternalEventValues),
 
 
-class SPODES3CommunicationEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+class SPODES3CommunicationEventValues(data.LongUnsigned):
     pass
 
 
@@ -212,7 +209,7 @@ class SPODES3CommunicationEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=SPODES3CommunicationEventValues),
 
 
-class SPODES3AccessEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+class SPODES3AccessEventValues(data.LongUnsigned):
     pass
 
 
@@ -221,7 +218,7 @@ class SPODES3AccessEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=SPODES3AccessEventValues),
 
 
-class SPODES3SelfDiagnosticEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+class SPODES3SelfDiagnosticEventValues(data.LongUnsigned):
     pass
 
 
@@ -230,7 +227,7 @@ class SPODES3SelfDiagnosticEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=SPODES3SelfDiagnosticEventValues),
 
 
-class SPODES3ReactivePowerEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
+class SPODES3ReactivePowerEventValues(data.LongUnsigned):
     pass
 
 
@@ -239,7 +236,7 @@ class SPODES3ReactivePowerEvent(DataDynamic):
     A_ELEMENTS = DataDynamic.getAElement(2).get_change(data_type=SPODES3ReactivePowerEventValues),
 
 
-class SPODES3PowerQuality2EventValues(cdt.IntegerFlag, cdt.LongUnsigned):
+class SPODES3PowerQuality2EventValues(data.LongUnsigned):
     pass
 
 
@@ -248,7 +245,7 @@ class SPODES3PowerQuality2Event(Data):
     A_ELEMENTS = Data.getAElement(2).get_change(data_type=SPODES3PowerQuality2EventValues),
 
 
-class LoadLockerValue(cdt.IntegerEnum, cdt.Unsigned):
+class LoadLockerValue(data.Unsigned):
     def __init_subclass__(cls, **kwargs) -> None:
         """not need"""
 
@@ -273,11 +270,11 @@ class SPODES3LoadLocker(DataStatic):
     A_ELEMENTS = Data.getAElement(2).get_change(data_type=LoadLockerValue),
 
 
-class SPODES3PowerQuality1EventValues(cdt.IntegerFlag, cdt.LongUnsigned):
+class SPODES3PowerQuality1EventValues(data.LongUnsigned):
     pass
 
 
-class SPODES3Alarm1Values(cdt.IntegerFlag, cdt.DoubleLongUnsigned):
+class SPODES3Alarm1Values(data.DoubleLongUnsigned):
     ...
 
 
@@ -294,7 +291,7 @@ class KPZAlarm1(DataStatic):
     A_ELEMENTS = DataStatic.getAElement(2).get_change(data_type=KPZAlarm1Values),
 
 
-class SPODES3ControlAlarm1Values(cdt.IntegerFlag, cdt.DoubleLongUnsigned):
+class SPODES3ControlAlarm1Values(data.DoubleLongUnsigned):
     ...
 
 
@@ -309,8 +306,8 @@ class SPODES3PowerQuality1Event(Data):
 
 
 # KPZ implements
-class KPZExternalEventValues(cdt.IntegerEnum, cdt.LongUnsigned):
-    NAMES = SPODES3ExternalEventValues.NAMES
+class KPZExternalEventValues(data.LongUnsigned):
+    """NAMES = SPODES3ExternalEventValues.NAMES"""
 
 
 class KPZSPODES3ExternalEvent(DataStatic):
@@ -319,7 +316,7 @@ class KPZSPODES3ExternalEvent(DataStatic):
 
 
 class KPZ1VoltageEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
-    NAMES = SPODES3VoltageEventValues.NAMES
+    """NAMES = SPODES3VoltageEventValues.NAMES"""
 
 
 class KPZ1SPODES3VoltageEvent(DataStatic):
@@ -328,7 +325,7 @@ class KPZ1SPODES3VoltageEvent(DataStatic):
 
 
 class KPZ1CurrentEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
-    NAMES = SPODES3CurrentEventValues.NAMES
+    """NAMES = SPODES3CurrentEventValues.NAMES"""
 
 
 class KPZ1SPODES3CurrentEvent(DataStatic):
@@ -337,7 +334,7 @@ class KPZ1SPODES3CurrentEvent(DataStatic):
 
 
 class KPZ1CommutationEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
-    NAMES = SPODES3CommutationEventValues.NAMES
+    """NAMES = SPODES3CommutationEventValues.NAMES"""
 
 
 class KPZ1SPODES3CommutationEvent(DataStatic):
@@ -346,7 +343,7 @@ class KPZ1SPODES3CommutationEvent(DataStatic):
 
 
 class KPZ1ProgrammingEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
-    NAMES = SPODES3ProgrammingEventValues.NAMES
+    """NAMES = SPODES3ProgrammingEventValues.NAMES"""
 
 
 class KPZ1SPODES3ProgrammingEvent(DataStatic):
@@ -355,7 +352,7 @@ class KPZ1SPODES3ProgrammingEvent(DataStatic):
 
 
 class KPZ1ExternalEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
-    NAMES = SPODES3ExternalEventValues.NAMES
+    """NAMES = SPODES3ExternalEventValues.NAMES"""
 
 
 class KPZ1SPODES3ExternalEvent(DataStatic):
@@ -364,7 +361,7 @@ class KPZ1SPODES3ExternalEvent(DataStatic):
 
 
 class KPZ1CommunicationEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
-    NAMES = SPODES3CommunicationEventValues.NAMES
+    """NAMES = SPODES3CommunicationEventValues.NAMES"""
 
 
 class KPZ1SPODES3CommunicationEvent(DataStatic):
@@ -373,7 +370,7 @@ class KPZ1SPODES3CommunicationEvent(DataStatic):
 
 
 class KPZ1AccessEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
-    NAMES = SPODES3AccessEventValues.NAMES
+    """NAMES = SPODES3AccessEventValues.NAMES"""
 
 
 class KPZ1SPODES3AccessEvent(DataStatic):
@@ -382,7 +379,7 @@ class KPZ1SPODES3AccessEvent(DataStatic):
 
 
 class KPZ1SelfDiagnosticEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
-    NAMES = SPODES3SelfDiagnosticEventValues.NAMES
+    """NAMES = SPODES3SelfDiagnosticEventValues.NAMES"""
 
 
 class KPZ1SPODES3SelfDiagnosticEvent(DataStatic):
@@ -391,7 +388,7 @@ class KPZ1SPODES3SelfDiagnosticEvent(DataStatic):
 
 
 class KPZ1ReactivePowerEventValues(cdt.IntegerEnum, cdt.DoubleLongUnsigned):
-    NAMES = SPODES3ReactivePowerEventValues.NAMES
+    """NAMES = SPODES3ReactivePowerEventValues.NAMES"""
 
 
 class KPZ1SPODES3ReactivePowerEvent(DataStatic):
@@ -449,6 +446,7 @@ class SPODES3IDNotSpecific(DLMSDeviceIDObject):
     A_ELEMENTS = DLMSDeviceIDObject.getAElement(2).get_change(classifier=Classifier.NOT_SPECIFIC),
 
 
+@dataclass
 class KPZGSMPingIPValue(data.Structure):
     """Содержит настройки для проведения Ping теста"""
     enable: data.Unsigned

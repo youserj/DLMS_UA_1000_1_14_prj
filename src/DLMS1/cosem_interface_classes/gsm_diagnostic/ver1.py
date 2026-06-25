@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Enum, Array, Structure, Unsigned, LongUnsigned, DoubleLongUnsigned
 from . import ver0
 from ..cosem_interface_class import ICAElement, Classifier, update_collection
@@ -15,6 +16,7 @@ class PSStatus(Enum):
     CDMA = 6
 
 
+@dataclass
 class CellInfoType(Structure):
     """cell_info_type"""
     cell_ID: DoubleLongUnsigned
@@ -26,6 +28,7 @@ class CellInfoType(Structure):
     channel_number: DoubleLongUnsigned
 
 
+@dataclass
 class AdjacentCellInfo(Structure):
     """adjacent_cell_info"""
     cell_ID: DoubleLongUnsigned

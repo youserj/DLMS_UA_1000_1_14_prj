@@ -2,14 +2,14 @@ from dataclasses import dataclass
 from COSEMpdu.data import Array, OctetString, Unsigned, LongUnsigned, Structure
 from ...types.type_alias import Attr
 from ..cosem_interface_class import ICAuto, ICAElement, ICMElement
-from ...types import cst
+from ...types.implementations import octet_string
 
 
 @dataclass
 class ObjectDefinition(Structure):
     """object_definition"""
     class_id: LongUnsigned
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
 
 
 RegisterAssignment = Array[ObjectDefinition]

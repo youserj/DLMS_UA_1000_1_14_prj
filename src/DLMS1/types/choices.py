@@ -1,10 +1,6 @@
 from abc import ABC
-from dataclasses import dataclass
 from itertools import chain
-from typing import TypeAlias, Self
-from COSEMpdu.x680 import NamedType
-from COSEMpdu.axdr import ChoiceType
-from COSEMpdu import data
+from typing import TypeAlias
 from ..types import cdt, ut, cst
 from ..types.implementations import structs
 

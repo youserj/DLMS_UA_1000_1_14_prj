@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from COSEMpdu.data import Structure, LongUnsigned, Unsigned, Array
-from ..types import cst
+from ..types.implementations import octet_string
 from ..types.type_alias import Attr
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement
 
@@ -9,7 +9,7 @@ from .cosem_interface_class import ICAuto, ICAElement, ICMElement
 class SpecDayEntry(Structure):
     """spec_day_entry"""
     index: LongUnsigned
-    specialday_date: cst.OctetStringDate
+    specialday_date: octet_string.Date
     day_id: Unsigned
 
 

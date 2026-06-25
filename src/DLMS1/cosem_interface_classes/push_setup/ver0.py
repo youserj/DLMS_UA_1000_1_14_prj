@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from COSEMpdu.data import Array, Integer, Structure, LongUnsigned, OctetString, Unsigned, Enum
 from typing import Final
 from ...types.type_alias import Attr
-from ...types import cst
-from ...types.implementations import structs, integers
+from ...types.implementations import structs, integers, octet_string
 from ..cosem_interface_class import ICAElement, ICMElement, ICAuto
 
 
@@ -11,7 +10,7 @@ from ..cosem_interface_class import ICAElement, ICMElement, ICAuto
 class ObjectDefinition(Structure):
     """object_definition"""
     class_id: LongUnsigned
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
     attribute_index: Integer
     data_index: LongUnsigned
 

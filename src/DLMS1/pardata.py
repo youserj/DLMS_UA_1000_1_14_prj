@@ -1,8 +1,7 @@
 from dataclasses import dataclass
+from COSEMpdu.axdr import ImplicitTaggedType
 from .cosem_interface_classes.parameter import Parameter
-from typing import Optional, Iterator
-from .types import cdt
-
+from typing import Iterator
 
 @dataclass(frozen=True)
 class ParValues[T]:
@@ -18,5 +17,5 @@ class ParValues[T]:
 
 
 @dataclass(frozen=True)
-class ParData(ParValues[cdt.CommonDataType]):
-    data: cdt.CommonDataType
+class ParData(ParValues[ImplicitTaggedType]):
+    data: ImplicitTaggedType

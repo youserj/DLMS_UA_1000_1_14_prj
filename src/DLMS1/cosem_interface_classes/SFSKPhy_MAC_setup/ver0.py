@@ -1,4 +1,5 @@
 from typing import Final
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Unsigned, LongUnsigned, Enum, Structure, Boolean
 from ..cosem_interface_class import ICAuto, ICAElement, Classifier
 from ...types.type_alias import Attr
@@ -23,6 +24,7 @@ class DeltaElectricalPhase(Enum):
     DEGREE_NEGATIVE_60: Final = 6
 
 
+@dataclass
 class FrequenciesType(Structure):
     """frequencies_type"""
     mark_frequency: LongUnsigned

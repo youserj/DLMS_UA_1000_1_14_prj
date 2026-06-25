@@ -1,22 +1,22 @@
+from typing import Final
 from dataclasses import dataclass
 from COSEMpdu.data import Enum, Array, Integer, Structure, Unsigned, OctetString
 from . import ver0
-from ...types.implementations import long_unsigneds
+from ...types.implementations import long_unsigneds, octet_string
 from . import abstract
-from ...types import cst
 from ...types.type_alias import Attr
 from ..cosem_interface_class import ICAElement, ICMElement, update_collection
 
 
 class AccessMode(Enum, abstract.AccessModeProto):
     """access_mode"""
-    NO_ACCESS = 0
-    READ_ONLY = 1
-    WRITE_ONLY = 2
-    READ_AND_WRITE = 3
-    AUTHENTICATED_READ_ONLY = 4
-    AUTHENTICATED_WRITE_ONLY = 5
-    AUTHENTICATED_READ_AND_WRITE = 6
+    NO_ACCESS: Final[int] = 0
+    READ_ONLY: Final[int] = 1
+    WRITE_ONLY: Final[int] = 2
+    READ_AND_WRITE: Final[int] = 3
+    AUTHENTICATED_READ_ONLY: Final[int] = 4
+    AUTHENTICATED_WRITE_ONLY: Final[int] = 5
+    AUTHENTICATED_READ_AND_WRITE: Final[int] = 6
 
     def is_writable(self) -> bool:
         return int(self) in (self.WRITE_ONLY, self.READ_AND_WRITE, self.AUTHENTICATED_WRITE_ONLY, self.AUTHENTICATED_READ_AND_WRITE)
@@ -64,7 +64,7 @@ class AccessRight(Structure):
 class ObjectListElement(Structure):
     class_id: long_unsigneds.ClassId
     version: Unsigned
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
     access_rights: AccessRight
 
 
@@ -79,7 +79,7 @@ class AssociationLN(ver0.AssociationLN):
         ver0.AssociationLN.A_ELEMENTS,
         ICAElement(2, "object_list", ObjectListType, selective_access=ver0.SelectiveAccessDescriptor),
         ICAElement(7, "secret", OctetString),
-        ICAElement(9, "security_setup_reference", cst.LogicalName))
+        ICAElement(9, "security_setup_reference", octet_string.LN))
     M_ELEMENTS = update_collection(
         ver0.AssociationLN.M_ELEMENTS,
         ICMElement(3, "add_object", ObjectListElement),

@@ -1,21 +1,19 @@
-from typing import Self, TypeAlias, Final
+from typing import Final
 from dataclasses import dataclass
-from COSEMpdu.x680 import INTEGER
+from COSEMpdu.axdr import ChoiceType
 from COSEMpdu.data import (
     NullData, BitString, DoubleLong, DoubleLongUnsigned, OctetString, VisibleString, Utf8String,
     Integer, Long, Unsigned, LongUnsigned, Long64, Long64Unsigned, Enum, Float32, Float64, Structure,
-    Data, union2alternatives
 )
 from ..types.implementations import integers
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier, Cardinality
 from ..types.type_alias import Attr
-Value: TypeAlias = NullData | BitString | DoubleLong | DoubleLongUnsigned | OctetString | VisibleString | Utf8String | \
-    Integer | Long | Unsigned | LongUnsigned | Long64 | Long64Unsigned | Enum | Float32 | Float64
 
 
-class ValueData(Data[Value]):
+class ValueData(ChoiceType):
     """value"""
-    alternatives = union2alternatives(Value)
+    value: NullData | BitString | DoubleLong | DoubleLongUnsigned | OctetString | VisibleString | Utf8String | \
+    Integer | Long | Unsigned | LongUnsigned | Long64 | Long64Unsigned | Enum | Float32 | Float64
 
 
 class Unit(Enum):
@@ -172,10 +170,6 @@ class ScalUnitType(Structure):
     """scal_unit_type"""
     scaler: Integer
     unit: Unit
-
-    @classmethod
-    def create(cls, scaler: INTEGER, unit: INTEGER) -> Self:
-        return cls.parse((scaler, unit))
 
 
 class Register(ICAuto):

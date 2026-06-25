@@ -4,7 +4,6 @@ usage of those definitions in the COSEM environment. All codes, which are not ex
 reserved for future use."""
 from functools import lru_cache
 from . import settings
-from .types import cosem_service_types as cst
 from .cosem_interface_classes import overview
 from .obis import media_id
 from .types.type_alias import Obis

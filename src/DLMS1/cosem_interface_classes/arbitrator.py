@@ -1,5 +1,6 @@
 from ..types.implementations import structs
 from ..types.implementations import integers
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Structure, BitString, LongUnsigned, Unsigned
 from .cosem_interface_class import ICAElement, ICMElement, Classifier, ICAuto
 from ..types.type_alias import Attr
@@ -35,6 +36,7 @@ MostRecentRequestTable = Array[MostRecentRequest]
 """most_recent_request_table"""
 
 
+@dataclass
 class RequestAction(Structure):
     """Defines the actions that are requested by an actorDefines the actions that are requested by an actor"""
     request_actor: Unsigned

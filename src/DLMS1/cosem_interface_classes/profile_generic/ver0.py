@@ -2,15 +2,14 @@
 from dataclasses import dataclass
 from COSEMpdu.data import Array, DoubleLongUnsigned, Integer, Enum, Structure
 from ...types.type_alias import Attr
-from ...types.implementations import long_unsigneds, integers
-from ...types import cst
+from ...types.implementations import long_unsigneds, integers, octet_string
 from ..cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
 
 
 @dataclass
 class ObjectDefinition(Structure):
     """ObjectDefinition"""
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
     class_id: long_unsigneds.ClassId
     attribute_index: Integer
 

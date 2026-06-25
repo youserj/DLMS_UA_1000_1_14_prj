@@ -1,7 +1,6 @@
 from COSEMpdu.data import DoubleLongUnsigned, LongUnsigned
-from ...types import cst
 from .. import register, extended_register
-from ...types.implementations import integers
+from ...types.implementations import integers, octet_string
 from ...types.type_alias import Attr
 from ..cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier, Cardinality
 
@@ -16,8 +15,8 @@ class DemandRegister(ICAuto):
         ICAElement(3, "last_average_value", register.ValueData, classifier=Classifier.DYNAMIC),
         ICAElement(4, "scaler_unit", register.ScalUnitType),
         ICAElement(5, "status", extended_register.StatusData, classifier=Classifier.DYNAMIC),
-        ICAElement(6, "capture_time", cst.OctetStringDateTime, classifier=Classifier.DYNAMIC),
-        ICAElement(7, "start_time_current", cst.OctetStringDateTime, classifier=Classifier.DYNAMIC),
+        ICAElement(6, "capture_time", octet_string.DateTime, classifier=Classifier.DYNAMIC),
+        ICAElement(7, "start_time_current", octet_string.DateTime, classifier=Classifier.DYNAMIC),
         ICAElement(8, "period", DoubleLongUnsigned, min=1),
         ICAElement(9, "number_of_periods", LongUnsigned, min=1, default=1))
     M_ELEMENTS = (

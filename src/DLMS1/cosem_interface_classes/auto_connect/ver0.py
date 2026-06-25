@@ -1,8 +1,9 @@
 from typing import Final
+from dataclasses import dataclass
 from COSEMpdu.data import OctetString, Array, Unsigned, LongUnsigned, Enum, Structure
 from ..cosem_interface_class import ICAuto, ICAElement, Classifier
 from ...types.type_alias import Attr
-from ...types import cst
+from ...types.implementations import octet_string
 
 
 class Mode(Enum):
@@ -13,10 +14,11 @@ class Mode(Enum):
     REGULAR_AUTO_DIALING_ALLOWED_WITHIN_CALLING_WINDOW_ALARM_INITIATED_AUTO_DIALING_ALLOWED_ANYTIME: Final = 3
 
 
+@dataclass
 class WindowElement(Structure):
     """window_element"""
-    start_time: cst.OctetStringDateTime
-    end_time: cst.OctetStringDateTime
+    start_time: octet_string.DateTime
+    end_time: octet_string.DateTime
 
 
 class PhoneNumber(OctetString):

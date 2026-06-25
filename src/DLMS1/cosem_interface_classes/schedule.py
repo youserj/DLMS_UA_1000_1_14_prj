@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from COSEMpdu.data import Boolean, LongUnsigned, Structure, BitString, Array
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement
-from ..types import cst
+from ..types.implementations import octet_string
 from ..types.type_alias import Attr
 
 
@@ -10,14 +10,14 @@ class ScheduleTableEntry(Structure):
     """schedule_table_entry"""
     index: LongUnsigned
     enable: Boolean
-    script_logical_name: cst.LogicalName
+    script_logical_name: octet_string.LN
     script_selector: LongUnsigned
-    switch_time: cst.OctetStringTime
+    switch_time: octet_string.Time
     validity_window: LongUnsigned
     exec_weekdays: BitString
     exec_specdays: BitString
-    begin_date: cst.OctetStringDate
-    end_date: cst.OctetStringDate
+    begin_date: octet_string.Date
+    end_date: octet_string.Date
 
 
 Entries = Array[ScheduleTableEntry]

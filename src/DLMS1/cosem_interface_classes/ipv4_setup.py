@@ -1,10 +1,11 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Structure, Boolean, Unsigned, OctetString
-from ..types.implementations import double_long_usingneds
-from ..types import cst
+from ..types.implementations import double_long_usingneds, octet_string
 from .cosem_interface_class import ICAElement, ICAuto, ICMElement
 from ..types.type_alias import Attr
 
 
+@dataclass
 class IPOptionsElement(Structure):
     """IP_options_element"""
     IP_Option_Type: Unsigned
@@ -26,7 +27,7 @@ class IPv4Setup(ICAuto):
     VERSION = 0
     # TODO: more 3 methods
     A_ELEMENTS = (
-        ICAElement(2, "DL_reference", cst.LogicalName),
+        ICAElement(2, "DL_reference", octet_string.LN),
         ICAElement(3, "IP_address", double_long_usingneds.IPAddress),
         ICAElement(4, "multicast_IP_address", MulticastIPAddress),
         ICAElement(5, "IP_options", IPOptions),

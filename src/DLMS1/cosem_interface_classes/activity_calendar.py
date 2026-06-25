@@ -1,15 +1,16 @@
 from typing import Self
+from dataclasses import dataclass
 from COSEMpdu.data import Structure, OctetString, Array, DateTime, Unsigned, LongUnsigned
-from ..types.implementations import integers
-from ..types import cst
+from ..types.implementations import integers, octet_string
 from .cosem_interface_class import ICAElement, ICMElement, ICAuto
 from ..types.type_alias import Attr
 
 
+@dataclass
 class Season(Structure):
     """season"""
     season_profile_name: OctetString
-    season_start: cst.OctetStringDateTime
+    season_start: octet_string.DateTime
     week_name: OctetString
 
 
@@ -45,6 +46,7 @@ class SeasonProfile(Array[Season]):
         return sorted_data
 
 
+@dataclass
 class WeekProfile(Structure):
     """week_profile"""
     week_profile_name: OctetString
@@ -73,10 +75,11 @@ class WeekProfileTable(Array[WeekProfile]):
         return tuple((el.week_profile_name for el in self.values))
 
 
+@dataclass
 class DayProfileAction(Structure):
     """day_profile_action"""
-    start_time: cst.OctetStringTime
-    script_logical_name: cst.LogicalName
+    start_time: octet_string.Time
+    script_logical_name: octet_string.LN
     script_selector: LongUnsigned
 
     def __lt__(self, other: Self) -> bool:
@@ -87,6 +90,7 @@ DaySchedule = Array[DayProfileAction]  # TODO: make unique by start_time
 """day_schedule"""
 
 
+@dataclass
 class DayProfile(Structure):
     """day_profile"""
     day_id: Unsigned
@@ -130,7 +134,7 @@ class ActivityCalendar(ICAuto):
         ICAElement(7, "season_profile_passive", SeasonProfile),
         ICAElement(8, "week_profile_table_passive", WeekProfileTable),
         ICAElement(9, "day_profile_table_passive", DayProfileTable),
-        ICAElement(10, "activate_passive_calendar_time", cst.OctetStringDateTime))
+        ICAElement(10, "activate_passive_calendar_time", octet_string.DateTime))
     M_ELEMENTS = ICMElement(1, "activate_passive_calendar", integers.IntegerValue0),
     calendar_name_active: Attr
     season_profile_active: Attr

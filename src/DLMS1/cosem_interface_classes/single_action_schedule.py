@@ -1,8 +1,7 @@
 from typing import Final
 from dataclasses import dataclass
 from COSEMpdu.data import Enum, Structure, Array
-from ..types.implementations import structs
-from ..types import cst
+from ..types.implementations import structs, octet_string
 from ..types.type_alias import Attr
 from .cosem_interface_class import ICAuto, ICAElement
 
@@ -19,8 +18,8 @@ class Type(Enum):
 @dataclass
 class ExecutionTimeDate(Structure):
     """execution_time_date"""
-    time: cst.OctetStringTime
-    date: cst.OctetStringDate
+    time: octet_string.Time
+    date: octet_string.Date
 
 
 ExecutionTime = Array[ExecutionTimeDate]

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from typing import Self, Literal
-from ..types import cst
+from typing import Self
 from copy import copy
 from ..types.type_alias import Obis
 

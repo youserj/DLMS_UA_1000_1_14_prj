@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, Final
 from enum import IntEnum
 import pickle
 import hashlib
@@ -8,9 +9,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 from COSEMpdu.x690 import Tag
-from COSEMpdu.x680 import NamedType, EnumerationList, EnumerationMember, Class, TaggingMode
-from COSEMpdu.x680.constrained_type import SizeConstraint
-from COSEMpdu.ber import SequenceType, IntegerType, ChoiceType, create_alternatives, EnumeratedType, OctetStringType, ConstrainedOctetStringType, TaggedType
+from COSEMpdu.x680 import Class, SizeConstraint
+from COSEMpdu.ber import SequenceType, IntegerType, ChoiceType, EnumeratedType, OctetStringType, ConstrainedOctetStringType, ExplicitTaggedType
 from .settings import settings
 
 
@@ -28,35 +28,25 @@ type Preinstall = Optional[TargetType_]
 type Firmwares = dict[tuple[FirmwareId, TargetType_], tuple[ImageInstance, Preinstall, Version, ImageData]]
 
 
-class TargetTypeList(EnumerationList):
-    members = (
-        EnumerationMember("application", 1),
-        EnumerationMember("bootloader", 2),
-        EnumerationMember("ble", 3)
-    )
-
-
 class TargetType(EnumeratedType):
-    named_members = TargetTypeList()
+    APPLICATION: Final[int] = 1
+    BOOTLOADER: Final[int] = 2
+    BLE: Final[int] = 3
 
 
+@dataclass
 class Version1(SequenceType):
-    components = (
-        NamedType("target", TargetType),
-        NamedType("firmware-id", OctetStringType),
-        NamedType("firmware-version", OctetStringType)
-    )
+    target: TargetType
+    firmware_id: OctetStringType
+    firmware_version: OctetStringType
 
 
 class MetaData(ChoiceType):
-    alternatives = create_alternatives(
-        NamedType("version1", Version1)
-    )
+    value: Version1
 
 
-class MetaDataTagged(TaggedType[MetaData]):
+class MetaDataTagged(ExplicitTaggedType, MetaData):
     tag = Tag(0, class_=Class.CONTEXT_SPECIFIC)
-    mode = TaggingMode.EXPLICIT
 
 
 class OctetStringTypeSize4(ConstrainedOctetStringType):
@@ -64,13 +54,12 @@ class OctetStringTypeSize4(ConstrainedOctetStringType):
     value: OctetStringType
 
 
+@dataclass
 class FirmwareImagePackage(SequenceType):
-    components = (
-        NamedType("magic", IntegerType),
-        NamedType("meta-data", MetaDataTagged),
-        NamedType("firmware-data", OctetStringType),
-        NamedType("crc", OctetStringTypeSize4),
-    )
+    magic: IntegerType
+    meta_data: MetaDataTagged
+    firmware_data: OctetStringType
+    crc: OctetStringTypeSize4
 
     @property
     def meta_data(self) -> MetaDataTagged:

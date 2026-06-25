@@ -1,10 +1,12 @@
-from COSEMpdu.x680.type import OCTET_STRING
+from COSEMpdu.x680 import OCTET_STRING
+from dataclasses import dataclass
 from COSEMpdu.data import Array, Structure, OctetString
 from ..iec_hdlc_setup.ver0 import CommSpeed
 from ..cosem_interface_class import ICAElement, ICAuto
 from ...types.type_alias import Attr
 
 
+@dataclass
 class InitializationStringElement(Structure):
     """ initialization_string_element"""
     request: OctetString

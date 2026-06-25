@@ -1,13 +1,14 @@
-from typing import Final
-from COSEMpdu.data import Structure, Enum, Long, BitMixin, Integer, Boolean, DateTime
-from ..types import cst
-from ..types.implementations import integers
+from typing import Final, ClassVar
+from dataclasses import dataclass
+from COSEMpdu.data import Structure, Enum, Long, Integer, Boolean, DateTime, BitString
+from ..types.implementations import integers, octet_string
 from ..types.type_alias import Attr
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
 
 
-class ClockStatus(BitMixin, Enum):
+class ClockStatus(BitString):
     """clock_status"""
+    tag: ClassVar[int] = 17    # interpreted as unsigned
     INVALID_VALUE: Final = 0b1
     DOUBTFUL_VALUE: Final = 0b10
     DIFFERENT_CLOCK_BASE: Final = 0b100
@@ -25,6 +26,7 @@ class ClockBase(Enum):
     RADIO_CONTROLLED: Final = 5
 
 
+@dataclass
 class PresetAdjustingTime(Structure):
     """method preset_adjusting_time"""
     preset_time: DateTime
@@ -45,11 +47,11 @@ class Clock(ICAuto):
     CLASS_ID = 8
     VERSION = 0
     A_ELEMENTS = (
-        ICAElement(2, "time", cst.OctetStringDateTime, classifier=Classifier.DYNAMIC),
+        ICAElement(2, "time", octet_string.DateTime, classifier=Classifier.DYNAMIC),
         ICAElement(3, "time_zone", TimeZone, -720, 840),
         ICAElement(4, "status", ClockStatus, classifier=Classifier.DYNAMIC),
-        ICAElement(5, "daylight_savings_begin", cst.OctetStringDateTime),
-        ICAElement(6, "daylight_savings_end", cst.OctetStringDateTime),
+        ICAElement(5, "daylight_savings_begin", octet_string.DateTime),
+        ICAElement(6, "daylight_savings_end", octet_string.DateTime),
         ICAElement(7, "daylight_savings_deviation", Integer, -120, 120),
         ICAElement(8, "daylight_savings_enabled", Boolean),
         ICAElement(9, "clock_base", ClockBase))

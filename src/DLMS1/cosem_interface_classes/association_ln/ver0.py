@@ -4,9 +4,8 @@ from COSEMpdu.apdu import Conformance, SelectiveAccessDescriptor
 from COSEMpdu.data import Enum, Array, Integer, NullData, Structure, Boolean, Unsigned, LongUnsigned, OctetString
 from COSEMpdu.axdr import ObjectIdentifierType, ImplicitTaggedType, ChoiceType
 from ...types.type_alias import Attr
-from ...types.implementations import long_unsigneds
+from ...types.implementations import long_unsigneds, octet_string
 from . import abstract
-from ...types import cst
 from ..cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
 
 
@@ -63,7 +62,7 @@ class ObjectListElement(Structure):
     """object_list_element"""
     class_id: long_unsigneds.ClassId
     version: Unsigned
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
     access_rights: AccessRight
 
 
@@ -159,7 +158,7 @@ class AssociationStatus(Enum):
 class ObjectId(Structure):
     """object_id"""
     class_id: long_unsigneds.ClassId
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
 
 
 class ObjectIdList(Array[ObjectId]):

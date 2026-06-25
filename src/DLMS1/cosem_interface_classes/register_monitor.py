@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from COSEMpdu.data import Array, Structure, CommonDataType
+from COSEMpdu.data import Array, Structure, Data
 from ..types.implementations import structs
 from .cosem_interface_class import ICAuto, ICAElement
 from ..types.type_alias import Attr
 
 
-Thresholds = Array[CommonDataType]
+Thresholds = Array[Data]
 
 
 @dataclass

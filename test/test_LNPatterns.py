@@ -1,9 +1,6 @@
-import logging
-import os
-from itertools import count
-import time
 import unittest
 from src.DLMS1.types import cdt, cst, ut
+from src.DLMS1.types.implementations import octet_string
 from src.DLMS1.cosem_interface_classes import collection, overview, ln_pattern
 from src.DLMS1 import cosem_interface_classes
 from src.DLMS1.obis import media_id
@@ -22,15 +19,15 @@ class TestType(unittest.TestCase):
         print(self.pattern)
 
     def test_equal(self):
-        self.assertEqual(self.pattern, cst.LogicalName.from_obis("0.2.0.1.0.255"))
-        self.assertNotEqual(self.pattern, cst.LogicalName.from_obis("1.0.0.1.0.255"))
+        self.assertEqual(self.pattern, octet_string.LN.from_obis("0.2.0.1.0.255"))
+        self.assertNotEqual(self.pattern, octet_string.LN.from_obis("1.0.0.1.0.255"))
 
     def test_country(self):
         print(ln_pattern.COUNTRY_SPECIFIC_IDENTIFIERS)
 
     def test_1(self):
         reduce_ln = ln_pattern.LNPattern.parse("0.0.(40,42).0.0.255")
-        print(reduce_ln == cst.LogicalName.from_obis("0.0.40.0.0.255"))
+        print(reduce_ln == octet_string.LN.from_obis("0.0.40.0.0.255"))
 
     def test_convert(self):
         clock_pat = ln_pattern.CLOCK

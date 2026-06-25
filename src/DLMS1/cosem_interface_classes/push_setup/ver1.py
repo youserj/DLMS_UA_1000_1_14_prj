@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from typing import TypeAlias, Final
+from typing import Final
 from COSEMpdu.data import Array, Integer, Structure, LongUnsigned, OctetString, Enum, DoubleLongUnsigned, NullData, ExternallyData, DiscriminatedUnion
-from COSEMpdu.axdr import NamedType
 from . import ver0
 from ...types.type_alias import Attr
-from ...types import cst
+from ...types.implementations import octet_string
 from ..cosem_interface_class import ICAElement, update_collection
 
 
@@ -22,15 +21,8 @@ class RestrictionByDate(Structure):
     to_date: OctetString
 
 
-RestrictionValueType: TypeAlias = NullData | RestrictionByDate | RestrictionByEntry
-
-
-class RestrictionValue(ExternallyData[RestrictionValueType]):
-    alternatives = {
-        0: NamedType("NO RESTRICTION", NullData),
-        1: NamedType("BY DATE", RestrictionByDate),
-        2: NamedType("BY ENTRY", RestrictionByEntry)
-    }
+class RestrictionValue(ExternallyData):
+    value: NullData | RestrictionByDate | RestrictionByEntry
 
 
 class RestrictionType(Enum):
@@ -50,7 +42,7 @@ class RestrictionElement(DiscriminatedUnion):
 class PushObjectDefinition(Structure):
     """push_object_definition"""
     class_id: LongUnsigned
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
     attribute_index: Integer
     data_index: LongUnsigned
     restriction: RestrictionElement
@@ -119,16 +111,9 @@ class KeyInfoType(Enum):
     AGREED_KEY = 2
 
 
-KeyInfoOptionsType: TypeAlias = IdentifiedKeyInfoOptions | WrappedKeyInfoOptions | AgreedKeyInfoOptions
-
-
-class KeyInfoOptions(ExternallyData[KeyInfoOptionsType]):
+class KeyInfoOptions(ExternallyData):
     """key_info_options"""
-    alternatives = {
-        0: NamedType("IdentifiedKeyInfoOptions", IdentifiedKeyInfoOptions),
-        1: NamedType("WrappedKeyInfoOptions", WrappedKeyInfoOptions),
-        2: NamedType("AgreedKeyInfoOptions", AgreedKeyInfoOptions)
-    }
+    value: IdentifiedKeyInfoOptions | WrappedKeyInfoOptions | AgreedKeyInfoOptions
 
 
 class KeyInfoElement(DiscriminatedUnion):
@@ -170,7 +155,7 @@ class PushSetup(ver0.PushSetup):
         ver0.PushSetup.A_ELEMENTS,
         ICAElement(2, "push_object_list", PushObjectList),
         ICAElement(3, "send_destination_and_method", SendDestinationAndMethod),
-        ICAElement(8, "port_reference", cst.LogicalName),
+        ICAElement(8, "port_reference", octet_string.LN),
         ICAElement(9, "push_client_sap", Integer),
         ICAElement(10, "push_protection_parameters", PushProtectionParameters),
 

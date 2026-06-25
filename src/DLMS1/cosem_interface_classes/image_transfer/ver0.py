@@ -1,4 +1,5 @@
 from typing import Final
+from dataclasses import dataclass
 from COSEMpdu.data import Enum, Array, Structure, Boolean, OctetString, DoubleLongUnsigned, BitString
 from ...types.implementations import integers
 from ...types.type_alias import Attr, Meth
@@ -17,6 +18,7 @@ class ImageTransferStatus(Enum):
     ACTIVATION_FAILED: Final = 7
 
 
+@dataclass
 class ImageToActivateInfoElement(Structure):
     """image_to_activate_info_element"""
     image_to_activate_size: DoubleLongUnsigned
@@ -28,12 +30,14 @@ ImageToActivateInfo = Array[ImageToActivateInfoElement]
 """image_to_activate_info attribute"""
 
 
+@dataclass
 class ImageTransferInitiate(Structure):
     """image_transfer_initiate method"""
     image_identifier: OctetString
     image_size: DoubleLongUnsigned
 
 
+@dataclass
 class ImageBlockTransfer(Structure):
     """image_block_transfer method"""
     image_block_number: DoubleLongUnsigned

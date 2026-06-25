@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from COSEMpdu.data import Structure, OctetString, LongUnsigned, Unsigned
 from .cosem_interface_class import ICAElement, ICAuto
 from ..types.type_alias import Attr
 
 
+@dataclass
 class QoSElement(Structure):
     """qos_element"""
     precedence: Unsigned
@@ -12,6 +14,7 @@ class QoSElement(Structure):
     mean_throughput: Unsigned
 
 
+@dataclass
 class QualityOfService(Structure):
     """quality_of_service"""
     default_: QoSElement

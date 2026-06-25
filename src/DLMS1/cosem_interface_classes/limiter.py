@@ -1,15 +1,15 @@
-from COSEMpdu.data import Array, Structure, Boolean, LongUnsigned, CommonDataType
-from ..types.implementations import structs
-from ..types.implementations import double_long_usingneds
-from ..types import cst
+from dataclasses import dataclass
+from COSEMpdu.data import Array, Structure, Boolean, LongUnsigned, Data
+from ..types.implementations import structs, double_long_usingneds, octet_string
 from .cosem_interface_class import ICAElement, ICAuto, Classifier
 from ..types.type_alias import Attr
 
 
+@dataclass
 class EmergencyProfileType(Structure):
     """emergency_profile"""
     emergency_profile_id: LongUnsigned
-    emergency_activation_time: cst.OctetStringDateTime
+    emergency_activation_time: octet_string.DateTime
     emergency_duration: double_long_usingneds.DoubleLongUnsignedSecond
 
 
@@ -17,6 +17,7 @@ EmergencyProfileGroupIdList = Array[LongUnsigned]
 """emergency_profile_group_id_list"""
 
 
+@dataclass
 class Action(Structure):
     """action"""
     action_over_threshold: structs.ActionItem
@@ -29,9 +30,9 @@ class Limiter(ICAuto):
     VERSION = 0
     A_ELEMENTS = (
         ICAElement(2, "monitored_value", structs.ValueDefinition),
-        ICAElement(3, "threshold_active", CommonDataType, classifier=Classifier.DYNAMIC),
-        ICAElement(4, "threshold_normal", CommonDataType),
-        ICAElement(5, "threshold_emergency", CommonDataType),
+        ICAElement(3, "threshold_active", Data, classifier=Classifier.DYNAMIC),
+        ICAElement(4, "threshold_normal", Data),
+        ICAElement(5, "threshold_emergency", Data),
         ICAElement(6, "min_over_threshold_duration", double_long_usingneds.DoubleLongUnsignedSecond),
         ICAElement(7, "min_under_threshold_duration", double_long_usingneds.DoubleLongUnsignedSecond),
         ICAElement(8, "emergency_profile", EmergencyProfileType),

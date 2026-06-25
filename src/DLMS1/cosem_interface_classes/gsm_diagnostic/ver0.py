@@ -1,6 +1,8 @@
+from typing import Final
 import logging
 from ...config_parser import get_message
-from COSEMpdu.data import Enum, Array, Structure, VisibleString, DateTime, EnumMixin, Unsigned, LongUnsigned
+from dataclasses import dataclass
+from COSEMpdu.data import Enum, Array, Structure, VisibleString, DateTime, Unsigned, LongUnsigned
 from ...types import cdt
 from ..cosem_interface_class import ICAuto, ICAElement, Classifier
 from ...types.type_alias import Attr
@@ -8,65 +10,65 @@ from ...types.type_alias import Attr
 
 class Status(Enum):
     """status"""
-    NOT_REGISTERED = 0
-    REGISTERED_HOME = 1
-    NOT_REGISTERED_SEARCHING = 2
-    REGISTRATION_DENIED = 3
-    UNKNOWN = 4
-    REGISTERED_ROAMING = 5
+    NOT_REGISTERED: Final[int] = 0
+    REGISTERED_HOME: Final[int] = 1
+    NOT_REGISTERED_SEARCHING: Final[int] = 2
+    REGISTRATION_DENIED: Final[int] = 3
+    UNKNOWN: Final[int] = 4
+    REGISTERED_ROAMING: Final[int] = 5
 
 
 class CSAttachment(Enum):
     """cs_attachment"""
-    INACTIVE = 0
-    INCOMING_CALL = 1
-    ACTIVE = 2
+    INACTIVE: Final[int] = 0
+    INCOMING_CALL: Final[int] = 1
+    ACTIVE: Final[int] = 2
 
 
 class PSStatus(Enum):
     """ps_status"""
-    INACTIVE = 0
-    GPRS = 1
-    EDGE = 2
-    UMTS = 3
-    HSPDA = 4
+    INACTIVE: Final[int] = 0
+    GPRS: Final[int] = 1
+    EDGE: Final[int] = 2
+    UMTS: Final[int] = 3
+    HSPDA: Final[int] = 4
 
 
-class SignalQuality(EnumMixin, Unsigned):
+class SignalQuality(Unsigned):
     """signal_quality"""
-    _113_DBM_OR_LESS = 0
-    _111_DBM = 1
-    _109_DBM = 2
-    _107_DBM = 3
-    _105_DBM = 4
-    _103_DBM = 5
-    _101_DBM = 6
-    _99_DBM = 7
-    _97_DBM = 8
-    _95_DBM = 9
-    _93_DBM = 10
-    _91_DBM = 11
-    _89_DBM = 12
-    _87_DBM = 13
-    _85_DBM = 14
-    _83_DBM = 15
-    _81_DBM = 16
-    _79_DBM = 17
-    _77_DBM = 18
-    _75_DBM = 19
-    _73_DBM = 20
-    _71_DBM = 21
-    _69_DBM = 22
-    _67_DBM = 23
-    _65_DBM = 24
-    _63_DBM = 25
-    _61_DBM = 26
-    _59_DBM = 27
-    _57_DBM = 28
-    _55_DBM = 29
-    _53_DBM = 30
-    _51_OR_GREATER = 31
-    NOT_KNOWN_OR_NOT_DETECTABLE = 99
+    _113_DBM_OR_LESS: Final[int] = 0
+    _111_DBM: Final[int] = 1
+    _109_DBM: Final[int] = 2
+    _107_DBM: Final[int] = 3
+    _105_DBM: Final[int] = 4
+    _103_DBM: Final[int] = 5
+    _101_DBM: Final[int] = 6
+    _99_DBM: Final[int] = 7
+    _97_DBM: Final[int] = 8
+    _95_DBM: Final[int] = 9
+    _93_DBM: Final[int] = 10
+    _91_DBM: Final[int] = 11
+    _89_DBM: Final[int] = 12
+    _87_DBM: Final[int] = 13
+    _85_DBM: Final[int] = 14
+    _83_DBM: Final[int] = 15
+    _81_DBM: Final[int] = 16
+    _79_DBM: Final[int] = 17
+    _77_DBM: Final[int] = 18
+    _75_DBM: Final[int] = 19
+    _73_DBM: Final[int] = 20
+    _71_DBM: Final[int] = 21
+    _69_DBM: Final[int] = 22
+    _67_DBM: Final[int] = 23
+    _65_DBM: Final[int] = 24
+    _63_DBM: Final[int] = 25
+    _61_DBM: Final[int] = 26
+    _59_DBM: Final[int] = 27
+    _57_DBM: Final[int] = 28
+    _55_DBM: Final[int] = 29
+    _53_DBM: Final[int] = 30
+    _51_OR_GREATER: Final[int] = 31
+    NOT_KNOWN_OR_NOT_DETECTABLE: Final[int] = 99
 
     def get_report(self) -> cdt.Report:
         val = int(self)
@@ -85,6 +87,7 @@ class SignalQuality(EnumMixin, Unsigned):
             log=cdt.Log(logging.WARN, "unknown value"))
 
 
+@dataclass
 class CellInfoType(Structure):
     """cell_info_type"""
     cell_ID: LongUnsigned
@@ -93,6 +96,7 @@ class CellInfoType(Structure):
     ber: Unsigned
 
 
+@dataclass
 class AdjacentCellInfo(Structure):
     """adjacent_cell_info"""
     cell_ID: LongUnsigned

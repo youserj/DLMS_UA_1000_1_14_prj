@@ -10,14 +10,14 @@ from functools import cached_property, lru_cache
 from typing import TypeAlias, Iterator, Self, Callable, Literal, Iterable, Optional, Protocol, get_args
 from COSEMpdu.byte_buffer import ByteBuffer
 from COSEMpdu.x680 import INTEGER, OCTET_STRING
-from COSEMpdu.apdu import CosemAttributeDescriptor
+from COSEMpdu.apdu import CosemAttributeDescriptor, CosemClassId, CosemObjectInstanceId, CosemObjectAttributeId
 from COSEMpdu import axdr, data as cdt
-from DLMS_SPODES.types.type_alias import attr2d
+from ..types.type_alias import attr2d
 from semver import Version as SemVer
 from StructResult import result
 from StructResult.result import Error, ValueOrError
-from ..types import common_data_types as cdt_, cosem_service_types as cst, useful_types as ut
-from ..types.implementations import structs
+from ..types import common_data_types as cdt_, useful_types as ut
+from ..types.implementations import structs, octet_string
 from .ln_pattern import LNPattern, LNPatterns
 from .activity_calendar import ActivityCalendar, DayProfileAction
 from .arbitrator import Arbitrator
@@ -84,7 +84,7 @@ class CollectionMapError(exc.DLMSException):
     """"""
 
 
-LNContaining: TypeAlias = bytes | str | cst.LogicalName | cdt.Structure | ut.CosemObjectInstanceId | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
+LNContaining: TypeAlias = bytes | str | octet_string.LN | cdt.Structure | ut.CosemObjectInstanceId | ut.CosemAttributeDescriptor | ut.CosemAttributeDescriptorWithSelection \
                           | ut.CosemMethodDescriptor
 
 AssociationSN: TypeAlias = AssociationSNVer0
@@ -104,7 +104,7 @@ InterfaceClass: TypeAlias = Data | Register | ExtendedRegister | DemandRegister 
 SFSKPhyMACSetup: TypeAlias = SFSKPhyMACSetupVer0 | SFSKPhyMACSetupVer1
 
 type AttributeIndex = int
-UsedAttributes: TypeAlias = dict[cst.LogicalName, set[AttributeIndex]]
+UsedAttributes: TypeAlias = dict[octet_string.LN, set[AttributeIndex]]
 
 
 ObjectTreeMode: TypeAlias = Literal["", "m", "g", "c", "mc", "cm", "gm", "gc", "cg", "gmc"]
@@ -1167,7 +1167,7 @@ class Collection:
             return obj
         return result.Error.from_e(TypeError(f"got {obj} expected {e_type}"))
 
-    def logicalName2obj(self, ln: cst.LogicalName) -> result.SimpleOrError[InterfaceClass]:
+    def logicalName2obj(self, ln: octet_string.LN) -> result.SimpleOrError[InterfaceClass]:
         return self.obis2ic(ln.contents)
 
     @deprecated("use <c.ldn>")
@@ -1241,7 +1241,7 @@ class Collection:
         """DLMS UA 1000-1 Ed 14 6.2.47 Arbitrator objects objects by channel"""
         return self.obis2obj(bytes((0, ch, 96, 3, 20, 255)), Arbitrator)
 
-    def get_script_names(self, ln: cst.LogicalName, selector: cdt_.LongUnsigned) -> str:
+    def get_script_names(self, ln: octet_string.LN, selector: cdt_.LongUnsigned) -> str:
         """return name from script by selector"""
         if isinstance(obj := self.obis2obj(ln.normalize(), ScriptTable), Error):
             obj.unwrap()
@@ -1447,9 +1447,18 @@ if config is not None:
 
 class AttrDesc:
     """keep constant descriptors # todo: make better"""
-    OBJECT_LIST = CosemAttributeDescriptor.parse((AssociationLNVer0.CLASS_ID, b"\x00\x00\x28\x00\x00\xff", 2))
-    LDN_VALUE = CosemAttributeDescriptor.parse((Data.CLASS_ID, b"\x00\x00\x28\x00\x00\xff", 2))
-    SPODES_VERSION = CosemAttributeDescriptor.parse((Data.CLASS_ID, b"\x00\x00\x60\x01\x06\xff", 2))
+    OBJECT_LIST = CosemAttributeDescriptor(
+        CosemClassId(AssociationLNVer0.CLASS_ID),
+        CosemObjectInstanceId(b"\x00\x00\x28\x00\x00\xff"),
+        CosemObjectAttributeId(2))
+    LDN_VALUE = CosemAttributeDescriptor(
+        CosemClassId(Data.CLASS_ID),
+        CosemObjectInstanceId(b"\x00\x00\x28\x00\x00\xff"),
+        CosemObjectAttributeId(2))
+    SPODES_VERSION = CosemAttributeDescriptor(
+        CosemClassId(Data.CLASS_ID),
+        CosemObjectInstanceId(b"\x00\x00\x60\x01\x06\xff"),
+        CosemObjectAttributeId(2))
 
 
 __range10_and_255: tuple[int, ...] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255

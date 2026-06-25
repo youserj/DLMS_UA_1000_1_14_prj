@@ -1,7 +1,7 @@
 from typing import Final
 from dataclasses import dataclass
-from ..types import cst
-from COSEMpdu.data import Enum, LongUnsigned, Structure, Array, Integer, CommonDataType
+from ..types.implementations import octet_string
+from COSEMpdu.data import Enum, LongUnsigned, Structure, Array, Integer, Data
 from .cosem_interface_class import ICAuto, ICAElement, ICMElement
 from ..types.type_alias import Attr
 
@@ -17,9 +17,9 @@ class ActionSpecification(Structure):
     """action_specification"""
     service_id: ServiceId
     class_id: LongUnsigned
-    logical_name: cst.LogicalName
+    logical_name: octet_string.LN
     index: Integer
-    parameter: CommonDataType
+    parameter: Data
 
 
 Actions = Array[ActionSpecification]
