@@ -1,7 +1,6 @@
 import unittest
 from COSEMpdu.byte_buffer import ByteBuffer
-from COSEMpdu.data import Array, Data
-from src.DLMS1.cosem_interface_classes.association_ln.ver1 import ObjectListElement, ObjectListType
+from src.DLMS1.cosem_interface_classes.association_ln.ver1 import ObjectListType
 
 
 class TestType(unittest.TestCase):

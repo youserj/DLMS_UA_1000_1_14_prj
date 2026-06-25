@@ -38,7 +38,7 @@ classifiers = [
 ]
 
 [project.urls]
-Source = "https://github.com/youserj/DLMS_UA_1000_1_prj"
+Source = "https://github.com/youserj/DlmsSPODES-project"
 
 
 [project.optional-dependencies]
