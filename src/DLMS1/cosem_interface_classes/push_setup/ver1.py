@@ -32,10 +32,14 @@ class RestrictionType(Enum):
     RANGE_BY_ENTRY = 2
 
 
+@dataclass
 class RestrictionElement(DiscriminatedUnion):
     """restriction_element"""
     restriction_type: RestrictionType
     restriction_value: RestrictionValue
+
+
+NONE_RESTRICTION = RestrictionElement(RestrictionType(0), NullData())
 
 
 @dataclass

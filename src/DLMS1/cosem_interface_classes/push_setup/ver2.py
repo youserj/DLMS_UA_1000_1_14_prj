@@ -3,8 +3,12 @@ from dataclasses import dataclass
 from COSEMpdu.data import Array, Integer, Structure, LongUnsigned, OctetString, Enum, DoubleLongUnsigned, DateTime
 from . import ver1
 from ...types.type_alias import Attr
-from ...types.implementations import integers, long_unsigneds, octet_string
+from ...types.implementations import integers, long_unsigneds, octet_string, structs
 from ..cosem_interface_class import ICAElement, ICMElement, Classifier, update_collection
+
+
+ColumnElement = Array[structs.CaptureObjectDefinition]
+"""column_element"""
 
 
 @dataclass
@@ -15,7 +19,7 @@ class PushObjectDefinition(Structure):
     attribute_index: Integer
     data_index: LongUnsigned
     restriction: ver1.RestrictionElement
-    column: ver1.PushObjectDefinition
+    column: ColumnElement
 
 
 PushObjectList = Array[PushObjectDefinition]
