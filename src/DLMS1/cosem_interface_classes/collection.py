@@ -12,6 +12,7 @@ from COSEMpdu.byte_buffer import ByteBuffer
 from COSEMpdu.x680 import INTEGER, OCTET_STRING
 from COSEMpdu.apdu import CosemAttributeDescriptor, CosemClassId, CosemObjectInstanceId, CosemObjectAttributeId
 from COSEMpdu import axdr, data as cdt
+from COSEMpdu.data import OctetString
 from ..types.type_alias import attr2d
 from semver import Version as SemVer
 from StructResult import result
@@ -210,13 +211,13 @@ common_interface_class_map: dict[int, ClassMap] = {
 }
 
 
-def get_interface_class(class_map: dict[int, ClassMap], c_id: int, ver: int) -> result.ValueOrError[type[IC]]:
+def get_interface_class(class_map: dict[int, ClassMap], c_id: int, ver: int) -> ValueOrError[type[IC]]:
     """new version <get_type_from_class>"""
     if isinstance(ret := class_map.get(c_id), ClassMap):
         return ret.get(ver)
     if c_id not in common_interface_class_map:
-        return result.Error.from_e(ValueError(f"unknown {c_id=}"), "get interface class")
-    return result.Error.from_e(ValueError((f"got {c_id=}, expected {', '.join(map(str, class_map.keys()))}")))
+        return Error.from_e(ValueError(f"unknown {c_id=}"), "get interface class")
+    return Error.from_e(ValueError((f"got {c_id=}, expected {', '.join(map(str, class_map.keys()))}")))
 
 
 _CUMULATIVE = (1, 2, 11, 12, 21, 22)
@@ -238,8 +239,7 @@ _RU_CHANGE_LIMIT_LEVEL = 134
 def _create_map(maps: ClassMap | tuple[ClassMap]) -> dict[int, ClassMap]:
     if isinstance(maps, tuple):
         return {int(map_.get(0).CLASS_ID): map_ for map_ in maps}
-    else:
-        return {int(maps.get(0).CLASS_ID): maps}
+    return {int(maps.get(0).CLASS_ID): maps}
 
 
 A: TypeAlias = int
@@ -577,7 +577,7 @@ func_maps["KPZ1"] = get_func_map(__func_map_for_create)
 def get_type(c_id: int,
              ver: int,
              obis: Obis,
-             func_map: FUNC_MAP) -> result.ValueOrError[type[IC]]:
+             func_map: FUNC_MAP) -> ValueOrError[type[IC]]:
     """use DLMS UA 1000-1 Ed. 14 Table 54"""
     c_m: Optional[dict[int, ClassMap]]
     if (
@@ -605,6 +605,38 @@ def get_type(c_id: int,
     return get_interface_class(class_map=c_m,
                                c_id=c_id,
                                ver=ver)
+
+
+def get_object(c_id: int, ver: int, obis: Obis, func_map: FUNC_MAP) -> ValueOrError[IC]:
+    """use DLMS UA 1000-1 Ed. 14 Table 54"""
+    c_m: Optional[dict[int, ClassMap]]
+    if (
+        (128 <= attr2b(obis) <= 199)
+        or (128 <= attr2c(obis) <= 199)
+        or obis[2] == 240
+        or (128 <= attr2d(obis) <= 254)
+        or (128 <= attr2e(obis) <= 254)
+        or (128 <= attr2f(obis) <= 254)
+    ):
+        c_m = func_map.get(obis[:5], common_interface_class_map)  # try search in ABCDE group for manufacture object before in CDE
+    else:
+        c_m = func_map.get(obis[:5], None)  # try search in ABCDE group
+        if c_m is None:
+            c_m = func_map.get(obis[:1] + obis[2:5], None)  # try search in A-CDE group
+            if c_m is None:
+                c_m = func_map.get(obis[:1] + obis[2:4], None)  # try search in A-CD group
+                if c_m is None:
+                    c_m = func_map.get(obis[:1] + obis[3:4], common_interface_class_map)  # try search in A-C group
+    if isinstance(target_ic := get_interface_class(c_m, c_id, ver), Error):
+        return target_ic
+    return target_ic(obis)
+
+
+def getIC[T: IC](target: type[T], obis: Obis, func_map: FUNC_MAP) -> ValueOrError[T]:
+    """use DLMS UA 1000-1 Ed. 14 Table 54"""
+    if isinstance(ret := get_object(target.CLASS_ID, target.VERSION, obis, func_map), target):
+        return ret
+    return Error.from_e(TypeError(f"got {ret} object, expected {target}"))
 
 
 @lru_cache(2000)
@@ -704,7 +736,7 @@ class ParameterValue:
 
 
 @dataclass(unsafe_hash=True, frozen=True)
-class AttrData:
+class AttrEncoding:
     attr: Attr
     data: Encoding
 
@@ -722,12 +754,11 @@ class AttrData:
 @dataclass(frozen=True, unsafe_hash=True)
 class ID:
     man: OCTET_STRING
-    f_id: AttrData
-    f_ver: AttrData
-    sap: INTEGER
+    f_id: AttrEncoding
+    f_ver: AttrEncoding
 
     def __bytes__(self) -> bytes:
-        return self.man + self.sap.to_bytes() + bytes(self.f_id) + bytes(self.f_ver)
+        return self.man + bytes(self.f_id) + bytes(self.f_ver)
 
 
 class EmptyAttribute(exc.DLMSException):
@@ -742,61 +773,73 @@ class EmptyAttribute(exc.DLMSException):
 
 class Collection:
     __id: ID
-    __dlms_ver: int
     __country: Optional[CountrySpecificIdentifiers]
-    __country_ver: Optional[AttrData]
+    __country_ver: Optional[AttrEncoding]
+    associations: dict[Obis, AssociationLN]
     __objs: dict[Obis, IC]
     _data: dict[Attr, DataType]
-    _t: dict[Attr, Tag]
-    spec_map: str
 
     def __init__(self,
-                 id_: ID,
-                 dlms_ver: int = 6,
+                 firm_id_ref: Attr,
+                 firm_ver_ref: Attr,
+                 associations: dict[Obis, AssociationLN],
+                 objects: dict[Obis, IC],
+                 data: dict[Attr, DataType],
                  country: Optional[CountrySpecificIdentifiers] = None,
-                 cntr_ver: Optional[AttrData] = None) -> None:
-        self.__id = id_
-        self.__dlms_ver = dlms_ver
+                 cntr_ver: Optional[AttrEncoding] = None
+    ) -> None:
         self.__country = country
         self.__country_ver = cntr_ver
         """country version specification"""
-        self.spec_map = "DLMS_6"
-        self.__objs = {}
+        self.associations = associations
+        """Associations DLMS objects container with obis key"""
+        self.__objs = objects
         """all DLMS objects container with obis key"""
-        self._data = {}
-        """data of collection"""
-        self._t = {}
-        """expected Tags of Attributes"""
+        self._data = data
+        """Static (ROM) data: LDN, firmware_id, SPODES version, and other read-only attributes defined by 
+        the meter specification. These values are immutable at runtime and loaded once at startup.
+        
+        Dynamic data (register values, clock, calibration, events, profiles) is managed by Server 
+        through CollectionDataDriver — NOT stored here. Server.getCDT() resolves: Driver → _data fallback.
+        
+        See doc/collection.md for the full architecture."""
+        if isinstance(man := self.get(b"\x00\x00\x2a\x00\x00\xff\x02", OctetString), Error):
+            raise RuntimeError("collection has't LDN")
+        if isinstance(f_id := self.getCDT(firm_id_ref), Error):
+            raise RuntimeError("can't find firm_id data")
+        if isinstance(f_ver := self.getCDT(firm_ver_ref), Error):
+            raise RuntimeError("can't find firm_ver data")
+        self.__id = ID(man, AttrEncoding(firm_id_ref, f_id), AttrEncoding(firm_ver_ref, f_ver))
 
-    def getCDT(self, attr: Attr) -> result.ValueOrError[DataType]:
+    def getCDT(self, attr: Attr) -> ValueOrError[DataType]:
         if (data := self._data.get(attr)) is None:
-            return result.Error.from_e(ValueError(f"not find data in collection with {attr=}"))
+            return Error.from_e(ValueError(f"not find data in collection with {attr=}"))
         return data
 
-    def get[T: DataType](self, attr: Attr, e_type: type[T]) -> result.ValueOrError[T]:
+    def get[T: DataType](self, attr: Attr, e_type: type[T]) -> ValueOrError[T]:
         if (data := self._data.get(attr)) is None:
-            return result.Error.from_e(ValueError(f"not find data in collection with {attr=}"))
+            return Error.from_e(ValueError(f"not find data in collection with {attr=}"))
         if isinstance(data, e_type):
             return data
-        return result.Error.from_e(TypeError(f"got {data.__class__}, expected {e_type}"))
+        return Error.from_e(TypeError(f"got {data.__class__}, expected {e_type}"))
 
     @property
     def id(self) -> ID:
         return self.__id
 
-    def validate_id(self, value: ID) -> result.Ok | result.Error:
+    def validate_id(self, value: ID) -> result.Ok | Error:
         if value != self.__id:
-            return result.Error.from_e(ValueError(F"can't set ID: {value}, find {self.__id}"))
+            return Error.from_e(ValueError(F"can't set ID: {value}, find {self.__id}"))
         return result.OK
 
-    def add_from_object_list(self, obj_list: ObjectListType) -> result.StrictOk | result.Error:
+    def add_from_object_list(self, obj_list: ObjectListType) -> result.StrictOk | Error:
         res = result.StrictOk()
         for o_l_el in obj_list:
             if isinstance(res_new := self.addIC(
                     c_id=int(o_l_el.class_id),
                     version=int(o_l_el.version),
                     obis=o_l_el.logical_name.value
-            ), result.Error):
+            ), Error):
                 res.append_err(res_new.err)
         return res
 
@@ -809,42 +852,30 @@ class Collection:
         return hash(self.id)
 
     @property
-    def dlms_ver(self) -> int:
-        return self.__dlms_ver
-
-    def set_dlms_ver(self, value: int) -> result.Ok | result.Error:
-        if not self.__dlms_ver:
-            self.__dlms_ver = value
-        elif value != self.__dlms_ver:
-            return result.Error.from_e(ValueError(F"got dlms_version: {value}, expected {self.__dlms_ver}"))
-        return result.OK
-
-    @property
     def country(self) -> Optional[CountrySpecificIdentifiers]:
         return self.__country
 
-    def set_country(self, value: CountrySpecificIdentifiers) -> result.Ok | result.Error:
+    def set_country(self, value: CountrySpecificIdentifiers) -> result.Ok | Error:
         if not self.__country:
             self.__country = value
         elif value != self.__country:
-            return result.Error.from_e(ValueError(F"got country: {value}, expected {self.__country}"))
+            return Error.from_e(ValueError(F"got country: {value}, expected {self.__country}"))
         return result.OK
 
     @property
-    def country_ver(self) -> Optional[AttrData]:
+    def country_ver(self) -> Optional[AttrEncoding]:
         return self.__country_ver
 
-    def set_country_ver(self, value: AttrData) -> result.Ok | result.Error:
+    def set_country_ver(self, value: AttrEncoding) -> result.Ok | Error:
         """country version specification"""
         if not self.__country_ver:
             self.__country_ver = value
         elif value != self.__country_ver:
-            return result.Error.from_e(ValueError(F"got country version: {value}, expected {self.__country_ver}"))
+            return Error.from_e(ValueError(F"got country version: {value}, expected {self.__country_ver}"))
         return result.OK
 
     def __str__(self) -> str:
-        return F"[{len(self.__objs)}] DLMS version: {self.__dlms_ver}, country: {self.__country}, country specific version: {self.__country_ver}, " \
-               F"id: {self.id}, uses specification: {self.spec_map}"
+        return F"[{len(self.__objs)}] country: {self.__country}, country specific version: {self.__country_ver}, id: {self.id}"
 
     def __iter__(self) -> Iterator[IC]:
         return iter(self.__objs.values())
@@ -876,13 +907,13 @@ class Collection:
     def __getitem__(self, item: Obis) -> IC:
         return self.__objs[item]
 
-    def attr2ICAElement(self, obis: Obis, i: Index) -> result.ValueOrError[ICAElement]:
-        if isinstance(r_ic := self.obis2ic(obis), result.Error):
+    def attr2ICAElement(self, obis: Obis, i: Index) -> ValueOrError[ICAElement]:
+        if isinstance(r_ic := self.obis2ic(obis), Error):
             return r_ic
         return r_ic.getAElement(i)
 
     @deprecated("use <obis2ic> or <obis2obj>")
-    def par2obj(self, par: Parameter) -> result.ValueOrError[IC]:
+    def par2obj(self, par: Parameter) -> ValueOrError[IC]:
         """return: DLMSObject"""
         raise RuntimeError("use obis2ic or obis2obj")
 
@@ -896,7 +927,7 @@ class Collection:
             try:
                 data = data[el]
             except (IndexError, TypeError) as e:
-                return result.Error.from_e(e, msg=f"with {par=} element={i}")
+                return Error.from_e(e, msg=f"with {par=} element={i}")
         return data
 
     def values(self) -> tuple[IC, ...]:
@@ -905,23 +936,23 @@ class Collection:
     def __len__(self) -> int:
         return len(self.__objs)
 
-    def setupCDT(self, attr: Attr, buf: ByteBuffer) -> result.ValueOrError[DataType]:
-        if isinstance(obj := self.obis2ic(attr2obis(attr)), result.Error):
+    def setupCDT(self, attr: Attr, buf: ByteBuffer) -> ValueOrError[DataType]:
+        if isinstance(obj := self.obis2ic(attr2obis(attr)), Error):
             return obj
-        if isinstance(res_data := obj.getCDT(attr2i(attr), buf), result.Error):
+        if isinstance(res_data := obj.getCDT(attr2i(attr), buf), Error):
             return res_data.with_msg(f"{obj}:{attr2i(attr)}")
         return self.setup_data(attr, res_data)
 
-    def setup[T: DataType](self, attr: Attr, buf: ByteBuffer, e_type: type[T]) -> result.ValueOrError[T]:
-        if isinstance(obj := self.obis2ic(attr2obis(attr)), result.Error):
+    def setup[T: DataType](self, attr: Attr, buf: ByteBuffer, e_type: type[T]) -> ValueOrError[T]:
+        if isinstance(obj := self.obis2ic(attr2obis(attr)), Error):
             return obj
-        if isinstance(data := obj.get(attr2i(attr), buf, e_type), result.Error):
+        if isinstance(data := obj.get(attr2i(attr), buf, e_type), Error):
             return data
         return self.setup_data(attr, data)
 
-    def setup_data[T: DataType](self, attr: Attr, data: T) -> result.ValueOrError[T]:
+    def setup_data[T: DataType](self, attr: Attr, data: T) -> ValueOrError[T]:
         if data != self._data.setdefault(attr, data):
-            return result.Error.from_e(ValueError(f"collection already exist other <Encoding> for {attr=}"))
+            return Error.from_e(ValueError(f"collection already exist other <Encoding> for {attr=}"))
         return data
 
     def setupTag(self, attr: Attr, buf: ByteBuffer) -> ValueOrError[Tag]:
@@ -940,22 +971,8 @@ class Collection:
             return Error.from_e(ValueError(f"collection already exist oter <Tag> for {attr=}"))
         return tag
 
-    def addIC(self, c_id: int,
-              version: Optional[int],
-              obis: Obis) -> result.ValueOrError[IC]:
-        """ append new DLMS object to collection with return it"""
-        if version is None:
-            if (keep_ver := isinstance(self.find_version(c_id), Error)):
-                return keep_ver
-            version = keep_ver
-        if isinstance(new_type := get_type(
-            c_id=c_id,
-            ver=version,
-            obis=obis,
-            func_map=func_maps[self.spec_map]), result.Error
-        ):
-            return new_type
-        return self.__objs.setdefault(obis, new_type(obis))
+    def add_association(version: Optional[int], obis: Obis) -> ValueOrError[AssociationLN]:
+        """TODO: make it"""
 
     def get_n_phases(self) -> int:
         """search objects with L2 phase"""
@@ -967,13 +984,6 @@ class Collection:
         if ret is None:
             raise exc.NoObject("no one electricity object was find")
         return ret
-
-    def find_version(self, class_id: ClassID) -> ValueOrError[INTEGER]:
-        """use for add new object from profile_generic if absence in object list"""
-        for obj in self.__objs.values():
-            if class_id == obj.CLASS_ID:
-                return obj.VERSION
-        return Error.from_e(ValueError(f"not find version for {ClassID=}"))
 
     @deprecated("use <obis2obj>")
     def is_in_collection(self, value: LNContaining) -> bool:
@@ -1084,7 +1094,7 @@ class Collection:
     def sap2objects(self, sap: ClientSAP) -> result.List[IC]:
         res = result.List()
         for par in self.sap2association(sap).iter_pars():
-            if isinstance(res1 := self.par2obj(par), result.Error):
+            if isinstance(res1 := self.par2obj(par), Error):
                 res1.append_err(res.err)
             else:
                 res.append(res1)
@@ -1115,7 +1125,7 @@ class Collection:
         for ass in self.iter_classID_objects(AssociationLNVer0.CLASS_ID):
             if attr2e(ass.obis) == 0:
                 """skip current association"""
-            elif isinstance(res_obj_list := self.get(AssociationLNVer0.object_list, ObjectListType, result.Error)):
+            elif isinstance(res_obj_list := self.get(AssociationLNVer0.object_list, ObjectListType, Error)):
                 res.append_e(TypeError(f"got {type(res_obj_list.value)} expected {ObjectListType.__name__}"))
             else:
                 for list_type in res.value:
@@ -1155,24 +1165,29 @@ class Collection:
                 res.append(s_u)
         return res
 
-    def obis2ic(self, obis: Obis) -> result.ValueOrError[IC]:
-        if obj := self.__objs.get(obis, None):
+    def obis2ic(self, obis: Obis) -> ValueOrError[IC]:
+        if (
+            (obj := self.__objs.get(obis, None))
+            or (obj := self.associations.get(obis, None))
+        ):
             return obj
-        return result.Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
+        return Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
+
+    def obis2ass(self, obis: Obis) -> ValueOrError[IC]:
+        """get Association from Obis"""
+        if obj := self.associations.get(obis, None):
+            return obj
+        return Error.from_e(ValueError(f"not exist Association with {obis=}"))
 
     def obis2obj[T: IC](self, obis: Obis, *e_type: type[T]) -> ValueOrError[T]:
         if (obj := self.__objs.get(obis)) is None:
-            return result.Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
+            return Error.from_e(ValueError(f"not exist DLMSObject with {obis=}"))
         if isinstance(obj, e_type):
             return obj
-        return result.Error.from_e(TypeError(f"got {obj} expected {e_type}"))
+        return Error.from_e(TypeError(f"got {obj} expected {e_type}"))
 
     def logicalName2obj(self, ln: octet_string.LN) -> result.SimpleOrError[InterfaceClass]:
         return self.obis2ic(ln.contents)
-
-    @deprecated("use <c.ldn>")
-    def LDN(self) -> impl.data.LDN:
-        raise RuntimeError("use <c.ldn>")
 
     @cached_property
     def current_association(self) -> ValueOrError[AssociationLN]:
@@ -1189,57 +1204,6 @@ class Collection:
     @cached_property
     def PUBLIC_ASSOCIATION(self) -> ValueOrError[AssociationLN]:
         return self.getASSOCIATION(0)
-
-    @property
-    def COMMUNICATION_PORT_PARAMETER(self) -> ValueOrError[impl.data.CommunicationPortParameter]:
-        return self.obis2obj(bytes((0, 0, 96, 12, 4, 255)), impl.data.CommunicationPortParameter)
-
-    @property
-    def clock(self) -> ValueOrError[Clock]:
-        return self.obis2obj(bytes((0, 0, 1, 0, 0, 255)), Clock)
-
-    @property
-    def firmwares_description(self) -> Data:
-        """ Consist from boot_version, descriptor, ex.: 0005PWRM_M2M_3_F1_5ppm_Spvq. 0.0.128.100.0.255 """
-        return self.obis2ic(bytes((0, 0, 128, 100, 0, 255))).unwrap()
-
-    @property
-    def RU_CLOSE_ELECTRIC_SEAL(self) -> Data:
-        """ Russian. СПОДЕС Г.2 """
-        return self.obis2ic(bytes((0, 0, 96, 51, 6, 255))).unwrap()
-
-    @property
-    def RU_ERASE_MAGNETIC_EVENTS(self) -> Data:
-        """ Russian. СПОДЕС Г.2 """
-        return self.obis2ic(bytes((0, 0, 96, 51, 7, 255))).unwrap()
-
-    @property
-    def RU_FILTER_ALARM_2(self) -> Data:
-        """ Russian. Filter of Alarm register relay"""
-        return self.obis2ic(bytes((0, 0, 97, 98, 11, 255))).unwrap()
-
-    @property
-    def RU_DAILY_PROFILE(self) -> ProfileGeneric:
-        """ Russian. Profile of daily values """
-        return self.obis2ic(bytes((1, 0, 98, 2, 0, 255))).unwrap()
-
-    @property
-    def RU_MAXIMUM_CURRENT_EXCESS_LIMIT(self) -> Register:
-        """ RU. СТО 34.01-5.1-006-2021 ver3, 11.1. Maximum current excess limit before the subscriber is disconnected, % of IMAX """
-        return self.obis2ic(bytes((1, 0, 11, 134, 0, 255))).unwrap()
-
-    @property
-    def RU_MAXIMUM_VOLTAGE_EXCESS_LIMIT(self) -> Register:
-        """ RU. СТО 34.01-5.1-006-2021 ver3, 11.1. Maximum voltage excess limit before the subscriber is disconnected, % of Unominal """
-        return self.obis2ic(bytes((1, 0, 12, 134, 0, 255))).unwrap()
-
-    def getDISCONNECT_CONTROL(self, ch: int = 0) -> DisconnectControl:
-        """DLMS UA 1000-1 Ed 14 6.2.46 Disconnect control objects by channel"""
-        return self.obis2ic(bytes((0, ch, 96, 3, 10, 255))).unwrap()
-
-    def getARBITRATOR(self, ch: int = 0) -> ValueOrError[Arbitrator]:
-        """DLMS UA 1000-1 Ed 14 6.2.47 Arbitrator objects objects by channel"""
-        return self.obis2obj(bytes((0, ch, 96, 3, 20, 255)), Arbitrator)
 
     def get_script_names(self, ln: octet_string.LN, selector: cdt_.LongUnsigned) -> str:
         """return name from script by selector"""
@@ -1280,9 +1244,9 @@ class Collection:
             raise ValueError(F"absent association with {client_sap}")
 
     def sap2association(self, sap: ClientSAP) -> result.SimpleOrError[AssociationLN]:
-        acc = result.ErrorAccumulator()
+        acc = ErrorAccumulator()
         for ass in self.iter_classID_objects(15):
-            if isinstance(r_par_type := acc.merge_err(self.get(ass.associated_partners_id, AssociatedPartnersType)), result.Error):
+            if isinstance(r_par_type := acc.merge_err(self.get(ass.associated_partners_id, AssociatedPartnersType)), Error):
                 continue
             if r_par_type.value.client_SAP == sap:
                 return result.Simple(ass)

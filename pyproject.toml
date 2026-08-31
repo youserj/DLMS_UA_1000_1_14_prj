@@ -14,7 +14,7 @@ exclude = ["test","KPZ"]
 
 [project]
 name = "DLMS1"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
     {name="Serj Kotilevski", email="youserj@outlook.com"}
 ]
@@ -38,7 +38,7 @@ classifiers = [
 ]
 
 [project.urls]
-Source = "https://github.com/youserj/DlmsSPODES-project"
+Source = "https://github.com/youserj/DLMS_UA_1000_1_14_prj"
 
 
 [project.optional-dependencies]

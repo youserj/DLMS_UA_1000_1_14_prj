@@ -14,7 +14,7 @@ from ..ipv4_setup import MulticastIPAddress
 
 class LDN(DataStatic):
     """for ldn"""
-    A_ELEMENTS = ICAElement(2, "value", octet_string.LDN, classifier=Classifier.STATIC),
+    A_ELEMENTS = ICAElement(2, "value", data.OctetString, classifier=Classifier.STATIC),
 
 
 class ActiveFirmwareId(Data):

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from struct import Struct
 from functools import lru_cache
 from typing_extensions import deprecated
-from typing import Self, Literal, Optional, Protocol, ClassVar, Any, overload
+from typing import Self, Literal, Optional, Protocol, ClassVar, overload
 from ..types.type_alias import Attr, Obis, Index, Encoding, attr2i, attr2obis, AttrDesc, pack_attr, Meth
 from ..types import cdt, ut
 from ..types.implementations import octet_string
@@ -52,7 +52,7 @@ class ICElement:
         raise NotImplementedError
 
 
-type DataType = axdr.ChoiceType | axdr.TaggedType[Any]
+type DataType = axdr.ChoiceType | axdr.ImplicitTaggedType
 
 
 @dataclass(frozen=True)

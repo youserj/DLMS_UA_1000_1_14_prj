@@ -5,12 +5,6 @@ import re
 from logging import ERROR
 
 
-class LDN(OctetString):
-    """for ldn. todo: check length in initialisation"""
-    def get_manufacturer(self) -> bytes:
-        return self.value[:3]
-
-
 class ID(OctetString):
     """for all implementation of Identifiers"""
 

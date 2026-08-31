@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from COSEMpdu.apdu import Conformance, SelectiveAccessDescriptor
 from COSEMpdu.data import Enum, Array, Integer, NullData, Structure, Boolean, Unsigned, LongUnsigned, OctetString
 from COSEMpdu.axdr import ObjectIdentifierType, ImplicitTaggedType, ChoiceType
-from ...types.type_alias import Attr
+from ...types.type_alias import Attr, Obis
 from ...types.implementations import long_unsigneds, octet_string
 from . import abstract
 from ..cosem_interface_class import ICAuto, ICAElement, ICMElement, Classifier
@@ -70,13 +70,13 @@ class ObjectListType(Array[ObjectListElement]):
     """object_list_type"""
 
 
-class ClientSAP(Enum):  # TODO: REWRITE elements here
+class ClientSAP(Integer):
     """ IEC 62056-46 2002 6.4.2.3 Reserved special HDLC addresses p.40. IS15952ver2 """
-    NO_STATION: Final = 0
-    MANAGEMENT_PROCESS: Final = 1
-    PUBLIC: Final = 0x10
-    READER: Final = 0x20
-    CONFIGURATOR: Final = 0x30
+    NO_STATION: Final[int] = 0
+    MANAGEMENT_PROCESS: Final[int] = 1
+    PUBLIC: Final[int] = 0x10
+    READER: Final[int] = 0x20
+    CONFIGURATOR: Final[int] = 0x30
 
 
 @dataclass
@@ -186,7 +186,7 @@ class AssociationLN(ICAuto):
                   ICAElement(4, "application_context_name", ContextNameType),
                   ICAElement(5, "xDLMS_context_info", XDLMSContextType),
                   ICAElement(6, "authentication_mechanism_name", MechanismNameType),
-                  ICAElement(7, "LLS_secret", OctetString, classifier=Classifier.NOT_SPECIFIC),
+                  ICAElement(7, "secret", OctetString, classifier=Classifier.NOT_SPECIFIC),
                   ICAElement(8, "association_status", AssociationStatus, classifier=Classifier.DYNAMIC))
     M_ELEMENTS = (ICMElement(1, "reply_to_HLS_authentication", OctetString),
                   ICMElement(2, "change_HLS_secret", OctetString),
@@ -197,5 +197,5 @@ class AssociationLN(ICAuto):
     application_context_name: Attr
     xDLMS_context_info: Attr
     authentication_mechanism_name: Attr
-    LLS_secret: Attr
+    secret: Attr
     association_status: Attr

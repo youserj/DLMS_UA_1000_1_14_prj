@@ -1,6 +1,7 @@
 from typing import overload, Union
 from COSEMpdu.data import Boolean
 from .ver0 import (
+    AssociationLN as AssociationLNVer0,
     AttributeAccessItem as AttributeAccessItemVer0,
     ObjectListElement as ObjectListElementVer0,
     ObjectListType as ObjectListTypeVer0,
@@ -11,18 +12,22 @@ from .ver0 import (
     ClientSAP,
 )
 from .ver1 import (
+    AssociationLN as AssociationLNVer1,
     AttributeAccessItem as AttributeAccessItemVer1,
     ObjectListElement as ObjectListElementVer1,
     ObjectListType as ObjectListTypeVer1,
     AccessRight as AccessRight1,
     AccessMode as AccessMode1,
-    AccessModeMeth as AccessModeMeth1
+    AccessModeMeth as AccessModeMeth1,
 )
+from .ver2 import AssociationLN as AssociationLNVer2
+from .ver3 import AssociationLN as AssociationLNVer3
 from ...types.type_alias import Obis
 from ... import exceptions as exc
 from ... import pdu_enums as pdu
 
 
+AssociationLN = Union[AssociationLNVer0, AssociationLNVer1, AssociationLNVer2, AssociationLNVer3]
 AttributeAccessItem = Union[AttributeAccessItemVer0, AttributeAccessItemVer1]
 ObjectListElement = Union[ObjectListElementVer0, ObjectListElementVer1]
 ObjectListType = Union[ObjectListTypeVer0, ObjectListTypeVer1]
@@ -60,7 +65,7 @@ def get_access_mode(instance: ObjectListTypeVer1, obis: Obis, i: int) -> AccessM
 def get_access_mode(instance: ObjectListType, obis: Obis, i: int) -> AccessMode:
     """ index - DLMS object attribute index """
     for item in get_access_right(instance, obis).attribute_access:
-        if item.attribute_id.normalize() == i:
+        if int(item.attribute_id) == i:
             return item.access_mode
     else:
         raise ValueError(F"access for {obis=}: {i} is absense")
@@ -71,7 +76,7 @@ def is_readable(instance: ObjectListType,
                 i: int,
                 security_policy: pdu.SecurityPolicy = pdu.SecurityPolicyVer0.NOTHING
                 ) -> bool:
-    match get_access_mode(instance, obis, i).normalize():
+    match int(get_access_mode(instance, obis, i)):
         case AccessMode0.NO_ACCESS | AccessMode0.WRITE_ONLY | AccessMode1.AUTHENTICATED_WRITE_ONLY:
             return False
         case AccessMode0.READ_ONLY | AccessMode0.READ_AND_WRITE:
@@ -121,7 +126,7 @@ def is_writable(instance: ObjectListType,
 def get_meth_access(instance: ObjectListType, obis: Obis, i: int) -> AccessModeMeth:
     """ index - DLMS object method index """
     for item in get_access_right(instance, obis).method_access:  # item: MethodAccessItem
-        if item.method_id.normalize() == i:
+        if int(item.method_id) == i:
             return item.access_mode
     else:
         raise exc.ITEApplication(f"not find method access rules in object_list for {obis=}:{i}")  # todo: make custom error
@@ -145,5 +150,11 @@ __all__ = [
     "ObjectListType",
     "MechanismIdElement",
     "ClientSAP",
-    "MechanismNameType"
+    "MechanismNameType",
+    "AssociationLNVer0",
+    "AssociationLNVer1",
+    "AssociationLNVer2",
+    "AssociationLNVer3",
+    "ObjectListTypeVer0",
+    "ObjectListTypeVer1"
 ]

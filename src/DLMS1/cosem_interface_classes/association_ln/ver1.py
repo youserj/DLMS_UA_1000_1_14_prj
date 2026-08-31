@@ -85,3 +85,4 @@ class AssociationLN(ver0.AssociationLN):
         ICMElement(3, "add_object", ObjectListElement),
         ICMElement(4, "remove_object", ObjectListElement))
     security_setup_reference: Attr
+    secret: Attr
