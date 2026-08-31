@@ -7,7 +7,7 @@ import unittest
 from time import perf_counter
 
 from src.DLMS1.types import cdt, cst, ut
-from DLMS_SPODES.cosem_interface_classes.parameter import Parameter, ParPattern
+from src.DLMS1.cosem_interface_classes.parameter import Parameter, ParPattern
 
 
 class TestType(unittest.TestCase):

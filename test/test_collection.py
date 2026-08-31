@@ -2,7 +2,7 @@ from functools import lru_cache
 from itertools import count
 import time
 import unittest
-from DLMS_SPODES.cosem_interface_classes import Parameter
+from src.DLMS1.cosem_interface_classes import Parameter
 from src.DLMS1.types import cdt, ut
 from src.DLMS1.types.implementations import octet_string
 from src.DLMS1.cosem_interface_classes import collection, overview, ln_pattern
